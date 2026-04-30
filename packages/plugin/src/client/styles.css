@@ -1,0 +1,10 @@
+/* Plugin-scoped CSS variables. Override these in consumer CSS to restyle. */
+:root {
+  --ct-row-height: 28px;
+  --ct-indent-step: 20px;
+  --ct-bg-hover: rgba(59, 130, 246, 0.1);
+  --ct-bg-selected: var(--theme-elevation-150, #e5e7eb);
+  --ct-text: var(--theme-elevation-800, #1f2937);
+  --ct-text-muted: var(--theme-elevation-500, #6b7280);
+  --ct-border: var(--theme-elevation-150, #e5e7eb);
+}

@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm -r test
+      - run: pnpm build
+      - name: Bundle size budget
+        run: |
+          ADMIN_BYTES=$(gzip -c packages/plugin/dist/client.js | wc -c)
+          echo "admin chunk: $ADMIN_BYTES bytes (gzip)"
+          if [ "$ADMIN_BYTES" -gt 81920 ]; then
+            echo "::error::admin chunk over 80kB gzip budget"; exit 1
+          fi

@@ -1,0 +1,50 @@
+{
+  "name": "@fishtank/payload-plugin-content-tree",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "Sitecore-style content tree view for Payload CMS 3.x admin.",
+  "repository": "github:getfishtank/payload-plugin-content-tree",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    }
+  },
+  "bin": {
+    "compat-check": "./dist/compat-check.js"
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "compat-check": "node ./dist/compat-check.js"
+  },
+  "peerDependencies": {
+    "payload": "^3.0.0",
+    "@payloadcms/ui": "^3.0.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "react-arborist": "^3.4.0",
+    "@tanstack/react-query": "^5.59.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "payload": "^3.84.0",
+    "@payloadcms/ui": "^3.84.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

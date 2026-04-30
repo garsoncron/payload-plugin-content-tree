@@ -1,0 +1,24 @@
+{
+  "name": "payload-plugin-content-tree-monorepo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r --filter ./packages/* build",
+    "dev": "pnpm --filter examples/basic dev",
+    "test": "pnpm -r test",
+    "test:e2e": "playwright test",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "pnpm -r typecheck",
+    "compat-check": "pnpm --filter @fishtank/payload-plugin-content-tree compat-check"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.6.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.9.0"
+  }
+}
