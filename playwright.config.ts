@@ -11,7 +11,7 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'pnpm --filter examples/basic dev',
+    command: 'pnpm --filter examples-basic dev',
     port: 3000,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

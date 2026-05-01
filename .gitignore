@@ -13,6 +13,7 @@ test-results
 *.log
 *.db
 *.db-journal
+examples/basic/src/payload-types.ts
 .pnpm-store
 .vscode
 .idea
