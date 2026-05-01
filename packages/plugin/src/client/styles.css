@@ -6,6 +6,7 @@
   --ct-bg-selected: var(--theme-elevation-150, #e5e7eb);
   --ct-text: var(--theme-elevation-800, #1f2937);
   --ct-text-muted: var(--theme-elevation-500, #6b7280);
+  /* --ct-border is also used by the layout split line below */
   --ct-border: var(--theme-elevation-150, #e5e7eb);
 
   /* Phase 6 (#29): consumers can override these to re-theme the tree */
@@ -27,9 +28,101 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 0;
   color: var(--ct-text);
   font-size: 14px;
+  /* Panes manage their own internal spacing */
+  overflow: hidden;
+}
+
+/* ── Horizontal split layout ─────────────────────────────────────────────── */
+
+/*
+ * .ct-layout wraps both panes in a flex row so the tree and the iframe
+ * sit side-by-side.  It fills the full height of .ct-view so the iframe
+ * can be 100% tall without an explicit pixel height.
+ */
+.ct-layout {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Tree pane — fixed-ish left column.
+   flex: 0 0 auto + min(40%, 480px) keeps it proportional on wide screens
+   but caps it so the iframe always has room. */
+.ct-pane--tree {
+  flex: 0 0 min(40%, 480px);
+  min-width: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: 1px solid var(--ct-border);
+  padding: 8px 0;
+}
+
+/* Edit pane — takes all remaining width.
+   overflow: hidden because the iframe fills it completely. */
+.ct-pane--edit {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0; /* flex child: prevent overflow from pushing tree pane */
+}
+
+/* ── Edit pane — breadcrumb header ──────────────────────────────────────── */
+
+.ct-edit-breadcrumb {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 13px;
+  color: var(--ct-text-muted);
+  border-bottom: 1px solid var(--ct-border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Edit pane — iframe ──────────────────────────────────────────────────── */
+
+.ct-edit-iframe {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block; /* removes the inline baseline gap */
+}
+
+/* ── Edit pane — empty placeholder ──────────────────────────────────────── */
+
+.ct-edit-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--ct-text-muted);
+  font-size: 14px;
+}
+
+/* ── Responsive: narrow viewports (≤ 900 px) stack vertically ───────────── */
+
+@media (max-width: 900px) {
+  .ct-layout {
+    flex-direction: column;
+  }
+
+  .ct-pane--tree {
+    /* Give the tree roughly half the viewport height when stacked */
+    flex: 0 0 50vh;
+    border-right: 0;
+    border-bottom: 1px solid var(--ct-border);
+  }
+
+  .ct-pane--edit {
+    flex: 1;
+  }
 }
 
 /* ── Toolbar (search row) ────────────────────────────────────────────────── */
