@@ -29,9 +29,9 @@
  * - TreeNode: from shared/types
  */
 
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Tree } from 'react-arborist'
-import type { NodeRendererProps } from 'react-arborist'
+import type { NodeRendererProps, TreeApi } from 'react-arborist'
 import type { TreeNode } from '../shared/types'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -134,6 +134,35 @@ export function TreeArborist(props: Props) {
   // onMove and onContextMenu are accepted for forward-compat (#24, #19)
   // but not wired in this phase — disableDrag keeps the tree read-only.
 
+  // react-arborist's `initialOpenState` only seeds on mount and does not
+  // react to subsequent prop changes. To make search-driven auto-expand
+  // (and any other runtime expand-state mutation) actually move the UI, we
+  // grab a TreeApi ref and diff against the last applied open map, calling
+  // tree.open(id) / tree.close(id) for each changed node.
+  //
+  // appliedOpenRef stays null until the first effect tick so we don't
+  // re-apply the initial state arborist already consumed via the prop.
+  const treeRef = useRef<TreeApi<TreeNode> | null>(null)
+  const appliedOpenRef = useRef<Record<string, boolean> | null>(null)
+
+  useEffect(() => {
+    const tree = treeRef.current
+    if (!tree || !initialOpenState) return
+
+    if (appliedOpenRef.current === null) {
+      appliedOpenRef.current = { ...initialOpenState }
+      return
+    }
+
+    const prev = appliedOpenRef.current
+    for (const [id, open] of Object.entries(initialOpenState)) {
+      const prevOpen = prev[id] === true
+      if (open && !prevOpen) tree.open(id)
+      else if (!open && prevOpen) tree.close(id)
+    }
+    appliedOpenRef.current = { ...initialOpenState }
+  }, [initialOpenState])
+
   // Bind the extra props (onToggle, highlightIds) into the row renderer via a
   // stable wrapper. We cannot pass them via React context here without
   // significant indirection; instead we wrap NodeRow in a closure so arborist
@@ -152,6 +181,7 @@ export function TreeArborist(props: Props) {
 
   return (
     <Tree<TreeNode>
+      ref={treeRef}
       data={data}
       // Coerce string | number id to string for arborist
       idAccessor={(node) => String(node.id)}
