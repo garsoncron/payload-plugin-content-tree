@@ -126,12 +126,15 @@ test.describe('Phase 3 — tree + search', () => {
 
     // The tree pane is mounted; rows render once /api/tree-pages resolves.
     await expect(page.getByTestId('tree-pane')).toBeVisible()
-    // At least the root folder ("Engineering") should be rendered.
+
+    // Locate by data-node-id so we don't depend on exact title text — other
+    // suites may seed sibling fixtures whose titles partial-match.
+    const engineeringId = createdIds.get('e2e-engineering')
+    if (engineeringId === undefined) throw new Error('Fixture seed failed')
     await expect(
-      page.getByTestId('content-tree-row').filter({ hasText: 'Engineering' }),
-    ).toBeVisible({
-      timeout: 10_000,
-    })
+      page.locator(`[data-testid="content-tree-row"][data-node-id="${String(engineeringId)}"]`),
+    ).toBeVisible({ timeout: 10_000 })
+
     // Edit pane shows the empty state until the user picks a node.
     await expect(page.getByTestId('edit-pane-empty')).toBeVisible()
   })
@@ -145,24 +148,23 @@ test.describe('Phase 3 — tree + search', () => {
     await expect(page.getByTestId('tree-pane')).toBeVisible()
 
     const searchInput = page.getByTestId('content-tree-search')
+    // Search by title — this may also match a sibling suite's "Onboarding
+    // Guide (dnd)" fixture but that's harmless; we assert specifically on
+    // OUR id below.
     await searchInput.fill('Onboarding')
 
-    // Debounce + fetch + expand. Give it a generous window for slow CI.
     const handbookId = createdIds.get('e2e-handbook')
     const onboardingId = createdIds.get('e2e-onboarding-guide')
     if (handbookId === undefined || onboardingId === undefined) {
       throw new Error('Fixture IDs missing — seeding likely failed.')
     }
 
-    // The matching leaf row should appear (auto-expanded ancestors made it visible).
-    await expect(
-      page.getByTestId('content-tree-row').filter({ hasText: 'Onboarding Guide' }),
-    ).toBeVisible({ timeout: 10_000 })
-
-    // The matching row is highlighted (.ct-row--highlighted class).
     const matchRow = page.locator(
       `[data-testid="content-tree-row"][data-node-id="${String(onboardingId)}"]`,
     )
+    // The matching leaf row should appear (auto-expanded ancestors made it visible).
+    await expect(matchRow).toBeVisible({ timeout: 10_000 })
+    // The matching row is highlighted (.ct-row--highlighted class).
     await expect(matchRow).toHaveClass(/ct-row--highlighted/)
 
     // Clearing the search drops the highlight but does not collapse the tree.
