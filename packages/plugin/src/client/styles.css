@@ -1,25 +1,73 @@
-/* Plugin-scoped CSS variables. Override these in consumer CSS to restyle. */
+/*
+ * @garsoncron/payload-plugin-content-tree — admin styles
+ *
+ * All values consumers might want to override are exposed as `--ct-*`
+ * custom properties in the :root block below. To restyle the tree:
+ *
+ *   :root {
+ *     --ct-row-bg-selected: #c7f0d4;
+ *     --ct-text: #111827;
+ *   }
+ *
+ * Or scope an override to your own admin theme:
+ *
+ *   .my-app-admin {
+ *     --ct-row-height: 32px;
+ *   }
+ *
+ * Variables that fall back to Payload's `--theme-elevation-*` ramp will
+ * pick up the consumer's Payload theme automatically.
+ *
+ * Variable groups: layout, color (text/bg/state), borders/shadows,
+ * z-index, animation, toolbar.
+ */
+
 :root {
+  /* ── Layout ─────────────────────────────────────────── */
   --ct-row-height: 28px;
   --ct-indent-step: 20px;
-  --ct-bg-hover: rgba(59, 130, 246, 0.1);
-  --ct-bg-selected: var(--theme-elevation-150, #e5e7eb);
+
+  /* ── Color — text ───────────────────────────────────── */
   --ct-text: var(--theme-elevation-800, #1f2937);
   --ct-text-muted: var(--theme-elevation-500, #6b7280);
-  /* --ct-border is also used by the layout split line below */
-  --ct-border: var(--theme-elevation-150, #e5e7eb);
 
-  /* Phase 6 (#29): consumers can override these to re-theme the tree */
+  /* ── Color — surface ────────────────────────────────── */
+  --ct-surface: var(--theme-elevation-0, #fff);
+
+  /* ── Color — error ──────────────────────────────────── */
+  --ct-error: var(--theme-error-500, #ef4444);
+
+  /* ── Color — interactive states ─────────────────────── */
+  --ct-bg-hover: rgba(59, 130, 246, 0.1);
+  --ct-bg-selected: var(--theme-elevation-150, #e5e7eb);
   --ct-row-bg-selected: var(--ct-bg-selected);
   --ct-row-bg-hover: var(--ct-bg-hover);
 
   /* Search highlight — soft yellow tint; override in consumer CSS to restyle */
   --ct-row-bg-highlighted: rgba(234, 179, 8, 0.15);
 
-  /* Toolbar */
+  /* ── Borders & shadows ──────────────────────────────── */
+  /* --ct-border is also used by the layout split line */
+  --ct-border: var(--theme-elevation-150, #e5e7eb);
+  --ct-shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+  /* ── Z-index stack ──────────────────────────────────── */
+  --ct-z-context-menu: 9999;
+  --ct-z-modal: 9999;
+  --ct-z-modal-backdrop: 9998;
+  --ct-z-toast: 9997;
+
+  /* ── Animation ──────────────────────────────────────── */
+  --ct-anim-fast: 100ms;
+  --ct-anim-base: 120ms;
+
+  /* ── Toolbar ────────────────────────────────────────── */
   --ct-toolbar-height: 40px;
   --ct-toolbar-border: var(--ct-border);
   --ct-search-input-width: 300px;
+
+  /* ── DnD drop indicator ─────────────────────────────── */
+  --ct-drop-indicator: var(--theme-elevation-500, #6b7280);
 }
 
 /* ── View container ──────────────────────────────────────────────────────── */
@@ -151,7 +199,7 @@
 }
 
 .ct-toolbar input[type='search']:focus {
-  border-color: var(--theme-elevation-500, #6b7280);
+  border-color: var(--ct-text-muted);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
@@ -165,7 +213,7 @@
 }
 
 .ct-search-status--error {
-  color: var(--theme-error-500, #ef4444);
+  color: var(--ct-error);
 }
 
 .ct-search-status--muted {
@@ -180,7 +228,7 @@
 }
 
 .ct-status--error {
-  color: var(--theme-error-500, #ef4444);
+  color: var(--ct-error);
 }
 
 /* ── Tree rows ───────────────────────────────────────────────────────────── */
@@ -205,7 +253,7 @@
 }
 
 .ct-row--focused {
-  outline: 2px solid var(--theme-elevation-500, #6b7280);
+  outline: 2px solid var(--ct-text-muted);
   outline-offset: -2px;
 }
 
@@ -230,18 +278,16 @@
  * It is positioned with `position: fixed` at the right-click coordinates,
  * clamped to the viewport by TreeContextMenu's clampToViewport helper.
  *
- * z-index: 9999 ensures it floats above Payload's admin chrome and any
- * modal layers (Payload uses ~1000 for its own overlays).
+ * z-index: var(--ct-z-context-menu) ensures it floats above Payload's admin
+ * chrome and any modal layers (Payload uses ~1000 for its own overlays).
  */
 .ct-context-menu {
   position: fixed;
-  z-index: 9999;
-  background: var(--theme-elevation-0, #fff);
-  border: 1px solid var(--ct-border, #e5e7eb);
+  z-index: var(--ct-z-context-menu);
+  background: var(--ct-surface);
+  border: 1px solid var(--ct-border);
   border-radius: 6px;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--ct-shadow-card);
   padding: 4px 0;
   min-width: 160px;
   /* Prevent text selection while the menu is open */
@@ -264,22 +310,22 @@
   padding: 7px 12px;
   font-size: 13px;
   line-height: 1.4;
-  color: var(--ct-text, #1f2937);
+  color: var(--ct-text);
   cursor: pointer;
   gap: 8px;
   /* Smooth hover transition */
-  transition: background-color 0.1s ease;
+  transition: background-color var(--ct-anim-fast) ease;
 }
 
 .ct-context-menu__item:hover,
 .ct-context-menu__item--focused {
-  background-color: var(--ct-bg-hover, rgba(59, 130, 246, 0.1));
+  background-color: var(--ct-bg-hover);
   outline: none;
 }
 
 /* Destructive actions (Delete) render in red */
 .ct-context-menu__item--destructive {
-  color: var(--theme-error-500, #ef4444);
+  color: var(--ct-error);
 }
 
 .ct-context-menu__item--destructive:hover,
@@ -297,7 +343,7 @@
 /* The ▸ arrow indicating a submenu */
 .ct-context-menu__item-arrow {
   font-size: 10px;
-  color: var(--ct-text-muted, #6b7280);
+  color: var(--ct-text-muted);
   flex-shrink: 0;
 }
 
@@ -321,14 +367,14 @@
 
 /* Arrow on a disabled Insert trigger is also greyed (inherits from parent opacity) */
 .ct-context-menu__item-arrow--disabled {
-  color: var(--ct-text-muted, #6b7280);
+  color: var(--ct-text-muted);
 }
 
 /* Empty state shown when ALL items are disabled */
 .ct-context-menu__empty {
   padding: 7px 12px;
   font-size: 12px;
-  color: var(--ct-text-muted, #6b7280);
+  color: var(--ct-text-muted);
   font-style: italic;
   cursor: default;
 }
@@ -337,14 +383,14 @@
 
 /*
  * Fixed-position container anchored to the bottom-right corner.
- * z-index: 9997 — intentionally below modals (9999) and context menu (9999)
+ * z-index: var(--ct-z-toast) — intentionally below modals and context menu
  * so toasts don't obscure active interactions.
  */
 .ct-toast-container {
   position: fixed;
   bottom: 16px;
   right: 16px;
-  z-index: 9997;
+  z-index: var(--ct-z-toast);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -362,9 +408,7 @@
   padding: 10px 12px;
   border-radius: 6px;
   border: 1px solid transparent;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--ct-shadow-card);
   font-size: 13px;
   line-height: 1.4;
   /* Re-enable pointer-events for each card (container has none) */
@@ -388,7 +432,7 @@
   line-height: 1;
   opacity: 0.6;
   color: inherit;
-  transition: opacity 0.1s ease;
+  transition: opacity var(--ct-anim-fast) ease;
 }
 
 .ct-toast__close:hover {
@@ -401,14 +445,14 @@
 .ct-toast--info {
   background: rgba(59, 130, 246, 0.1);
   border-color: rgba(59, 130, 246, 0.3);
-  color: var(--ct-text, #1f2937);
+  color: var(--ct-text);
 }
 
 /* Success — green tint */
 .ct-toast--success {
   background: rgba(34, 197, 94, 0.1);
   border-color: rgba(34, 197, 94, 0.3);
-  color: var(--ct-text, #1f2937);
+  color: var(--ct-text);
 }
 
 /* Error — red tint */
@@ -430,9 +474,6 @@
  * CSS variable that arborist picks up via its own stylesheet, plus a fallback
  * rule for any custom renderCursor implementations.
  */
-:root {
-  --ct-drop-indicator: var(--theme-elevation-500, #6b7280);
-}
 
 /* Arborist renders its internal drop cursor inline; we add a visible accent
    for any custom renderCursor wrapper the consumer might configure. */

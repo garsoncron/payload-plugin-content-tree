@@ -55,6 +55,41 @@ export default buildConfig({
 
 Visit `/admin/tree`.
 
+## Theming
+
+All consumer-overridable values are exposed as `--ct-*` CSS custom properties. Override them in your own admin CSS:
+
+```css
+:root {
+  --ct-row-bg-selected: #c7f0d4;
+  --ct-row-height: 32px;
+}
+```
+
+Or scope overrides to a custom admin wrapper class:
+
+```css
+.my-app-admin {
+  --ct-text: #111827;
+  --ct-border: #d1d5db;
+}
+```
+
+Variables that fall back to Payload's `--theme-elevation-*` ramp pick up your Payload theme automatically — no extra configuration needed for dark-mode support.
+
+**Variable groups** (source of truth: `packages/plugin/src/client/styles.css` `:root` block):
+
+- **Layout** — `--ct-row-height`, `--ct-indent-step`
+- **Color — text** — `--ct-text`, `--ct-text-muted`
+- **Color — surface** — `--ct-surface`
+- **Color — error** — `--ct-error`
+- **Color — interactive states** — `--ct-bg-hover`, `--ct-bg-selected`, `--ct-row-bg-selected`, `--ct-row-bg-hover`, `--ct-row-bg-highlighted`
+- **Borders & shadows** — `--ct-border`, `--ct-shadow-card`
+- **Z-index stack** — `--ct-z-context-menu`, `--ct-z-modal`, `--ct-z-modal-backdrop`, `--ct-z-toast`
+- **Animation** — `--ct-anim-fast`, `--ct-anim-base`
+- **Toolbar** — `--ct-toolbar-height`, `--ct-toolbar-border`, `--ct-search-input-width`
+- **DnD** — `--ct-drop-indicator`
+
 ## Required collection shape
 
 The plugin **does not inject fields** — your collection must define them. The plugin validates at `buildConfig` time and throws with a copy-pasteable error if anything is missing. _(validation lands in [#7](https://github.com/garsoncron/payload-plugin-content-tree/issues/7).)_
