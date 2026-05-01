@@ -507,17 +507,14 @@
 /* ── Phase 6 — workflow gutter + lock indicator (#27) ───────────────────── */
 
 /*
- * Fixed-width slot that always renders LEFT of the chevron. Keeping it
- * unconditionally rendered (even when empty) means the chevron and label
- * have a stable horizontal offset regardless of whether a given node has
- * workflow or lock data. Without this, populated and empty rows mis-align.
+ * Fixed-width slot that always renders LEFT of the chevron. The slot is
+ * unconditionally rendered (even when empty) so chevron and label keep a
+ * stable horizontal offset regardless of whether a given node has workflow
+ * or lock data.
  *
- * Width: 24 px — fits an 8 px dot + 4 px gap + 12 px lock icon comfortably.
- * The dot color comes from an inline style (data, not theme) so no CSS var is
- * needed for it. --ct-text-muted is reused for the lock icon.
- *
- * NOTE: if a new --ct-workflow-dot or --ct-lock-color theming var is needed,
- * leave a comment here and the #29 agent will fold it into the :root surface.
+ * Width: 24 px — fits an 8 px dot + 4 px gap + 12 px lock icon. Dot color
+ * comes from an inline style (data, not theme); --ct-text-muted styles the
+ * lock icon.
  */
 .ct-row__gutter {
   display: inline-flex;
@@ -542,4 +539,53 @@
   align-items: center;
   color: var(--ct-text-muted);
   flex-shrink: 0;
+}
+
+/* ── Phase 6 — content-type icons (#28) ──────────────────────────────────── */
+
+.ct-row__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--ct-text-muted);
+  margin-right: 6px;
+}
+
+/* ── Phase 6 — modal polish (#28) ────────────────────────────────────────── */
+
+@keyframes ct-modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes ct-modal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ct-modal-backdrop {
+  animation: ct-modal-fade-in var(--ct-anim-base) ease-out;
+}
+.ct-modal {
+  animation: ct-modal-rise var(--ct-anim-base) ease-out;
+}
+
+/* Focus rings: inputs and buttons inside the modal get a visible focus ring
+   on keyboard navigation. Uses the elevation variable already in :root. */
+.ct-modal input:focus-visible,
+.ct-modal button:focus-visible {
+  outline: 2px solid var(--theme-elevation-500, #6b7280);
+  outline-offset: 1px;
 }

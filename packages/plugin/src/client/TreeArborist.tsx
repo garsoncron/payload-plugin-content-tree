@@ -39,6 +39,7 @@ import { Tree } from 'react-arborist'
 import type { MoveHandler, NodeRendererProps, TreeApi } from 'react-arborist'
 import type { TreeNode } from '../shared/types'
 import { WORKFLOW_STATE_COLORS } from '../shared/constants'
+import { getContentTypeIcon } from './icons'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -127,11 +128,11 @@ function NodeRow({ style, node, onToggleProp, highlightIds, onContextMenuProp }:
   const showChevron = treeNode.hasChildren
   const isHighlighted = highlightIds != null && highlightIds.has(String(treeNode.id))
 
-  // ── Workflow dot ───────────────────────────────────────────────────────────
+  // ── Workflow dot (#27) ────────────────────────────────────────────────────
   // Look up the color for the current workflowState. Render only when the
   // state is a non-empty string AND the color map has an entry for it.
-  // Unknown or empty states are silently skipped (render null) so that
-  // consumer-defined custom states don't produce a broken indicator.
+  // Unknown or empty states are silently skipped so consumer-defined custom
+  // states don't produce a broken indicator.
   const workflowColor =
     treeNode.workflowState != null && treeNode.workflowState !== ''
       ? WORKFLOW_STATE_COLORS[treeNode.workflowState]
@@ -147,7 +148,7 @@ function NodeRow({ style, node, onToggleProp, highlightIds, onContextMenuProp }:
       />
     ) : null
 
-  // ── Lock icon ──────────────────────────────────────────────────────────────
+  // ── Lock icon (#27) ───────────────────────────────────────────────────────
   // Render only when lockedBy is truthy (not null, not undefined, not "").
   const lockIcon =
     treeNode.lockedBy != null && treeNode.lockedBy !== '' ? (
@@ -155,6 +156,11 @@ function NodeRow({ style, node, onToggleProp, highlightIds, onContextMenuProp }:
         <LockIcon />
       </span>
     ) : null
+
+  // ── Content-type icon (#28) ───────────────────────────────────────────────
+  // getContentTypeIcon always returns at least the built-in default icon, so
+  // icon will be non-null in practice.
+  const icon = getContentTypeIcon(treeNode.contentType)
 
   return (
     <div
@@ -199,6 +205,11 @@ function NodeRow({ style, node, onToggleProp, highlightIds, onContextMenuProp }:
       </span>
       <span className="ct-row__chevron" aria-hidden="true">
         {showChevron ? (isOpen ? '▾' : '▸') : null}
+      </span>
+      {/* Content-type icon — always rendered to keep label alignment stable.
+          Resolves via getContentTypeIcon with fallback to built-in default. */}
+      <span className="ct-row__icon" aria-hidden="true">
+        {icon}
       </span>
       <span className="ct-row__label">{treeNode.title}</span>
     </div>
