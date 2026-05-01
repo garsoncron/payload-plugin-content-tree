@@ -30,10 +30,15 @@ export const contentTreePlugin =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const views = { ...((config.admin.components as any).views ?? {}) }
 
+    // Payload's AdminViewConfig schema puts clientProps INSIDE the Component
+    // descriptor (RawPayloadComponent), not at the top level of the view
+    // config — they are silently dropped if hoisted.
     views[VIEW_KEY] = {
-      Component: VIEW_PATH,
+      Component: {
+        path: VIEW_PATH,
+        clientProps: serializableOpts(opts, adminPath),
+      },
       path: adminPath,
-      clientProps: serializableOpts(opts, adminPath),
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(config.admin.components as any).views = views
