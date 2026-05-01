@@ -15,7 +15,9 @@ async function main() {
     console.error('Usage: compat-check <collection-slug>')
     process.exit(2)
   }
-  console.log(`[content-tree-plugin] compat-check for collection "${slug}" — NOT_IMPLEMENTED (v0.1)`)
+  console.log(
+    `[content-tree-plugin] compat-check for collection "${slug}" — NOT_IMPLEMENTED (v0.1)`,
+  )
   process.exit(0)
 }
 

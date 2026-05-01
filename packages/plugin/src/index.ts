@@ -7,8 +7,4 @@
  */
 
 export { contentTreePlugin } from './plugin'
-export type {
-  ContentTreePluginOptions,
-  TreeNode,
-  ContextMenuAction,
-} from './shared/types'
+export type { ContentTreePluginOptions, TreeNode, ContextMenuAction } from './shared/types'

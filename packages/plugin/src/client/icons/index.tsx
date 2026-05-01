@@ -9,8 +9,6 @@
  * TODO(v0.1): port from FRAS spike ContentTypeIcon.
  */
 
-import React from 'react'
-
 export function ContentTypeIcon({ type: _type }: { type: string }) {
   // TODO(v0.1)
   return null

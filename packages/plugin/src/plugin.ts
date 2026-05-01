@@ -38,11 +38,7 @@ export const contentTreePlugin =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(config.admin.components as any).views = views
 
-    config.endpoints = [
-      ...(config.endpoints ?? []),
-      treeEndpoint(opts),
-      searchEndpoint(opts),
-    ]
+    config.endpoints = [...(config.endpoints ?? []), treeEndpoint(opts), searchEndpoint(opts)]
 
     return config
   }

@@ -22,9 +22,6 @@ export interface ReorderInput {
   newIndex: number
 }
 
-export async function reorderNode(
-  _payload: Payload,
-  _input: ReorderInput,
-): Promise<void> {
+export async function reorderNode(_payload: Payload, _input: ReorderInput): Promise<void> {
   // TODO(v0.1): implement
 }

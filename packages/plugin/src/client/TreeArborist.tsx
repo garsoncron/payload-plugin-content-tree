@@ -7,7 +7,7 @@
  * TODO(v0.1): implement.
  */
 
-import React from 'react'
+import type React from 'react'
 import type { TreeNode } from '../shared/types'
 
 interface Props {

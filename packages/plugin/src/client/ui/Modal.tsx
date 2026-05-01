@@ -6,9 +6,13 @@
  * TODO(v0.1): port from FRAS Modal — overlay + content + dismissable.
  */
 
-import React from 'react'
+import type React from 'react'
 
-export function ModalOverlay(_props: { children: React.ReactNode; onClose: () => void; ariaLabel: string }) {
+export function ModalOverlay(_props: {
+  children: React.ReactNode
+  onClose: () => void
+  ariaLabel: string
+}) {
   // TODO(v0.1)
   return null
 }

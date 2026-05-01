@@ -17,10 +17,7 @@ const REQUIRED = [
   { key: 'title', type: 'text', default: 'title' },
 ] as const
 
-export function validateCollection(
-  _config: Config,
-  _opts: ContentTreePluginOptions,
-): void {
+export function validateCollection(_config: Config, _opts: ContentTreePluginOptions): void {
   // TODO(v0.1): walk config.collections, find by slug, walk its fields
   // (recursively into tabs), assert each REQUIRED entry is present and
   // of the correct type. Throw with the message:

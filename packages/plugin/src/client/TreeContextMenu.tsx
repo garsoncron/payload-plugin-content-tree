@@ -9,7 +9,6 @@
  * TODO(v0.1): port from FRAS spike TreeContextMenu.tsx.
  */
 
-import React from 'react'
 import type { ContentTreePluginOptions, TreeNode } from '../shared/types'
 
 interface Props {

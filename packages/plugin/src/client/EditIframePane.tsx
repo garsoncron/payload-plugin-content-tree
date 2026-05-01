@@ -7,7 +7,6 @@
  * TODO(v0.1): trivial — iframe + breadcrumb header.
  */
 
-import React from 'react'
 import type { TreeNode } from '../shared/types'
 
 interface Props {
