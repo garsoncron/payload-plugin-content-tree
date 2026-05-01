@@ -53,8 +53,15 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  QueryClient,
+  QueryClientProvider,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import type { ContentTreePluginOptions, ContextMenuAction, TreeNode } from '../shared/types'
+import { validateDrop } from './helpers/dropValidation'
 import { TreeArborist } from './TreeArborist'
 import { EditIframePane } from './EditIframePane'
 import { TreeContextMenu } from './TreeContextMenu'
@@ -156,6 +163,7 @@ function ContentTreeInner({
   insertOptions,
   contentTypeLabels,
   fields,
+  maxDepth,
   canPerformAction,
 }: ViewProps) {
   // ── QueryClient (for cache invalidation) ─────────────────────────────────
@@ -256,6 +264,48 @@ function ContentTreeInner({
     return (action, node) => canPerformAction(action, currentUser, node)
   }, [canPerformAction, currentUser])
 
+  // ── DnD: gateMove adapter (Phase 5, #24) ─────────────────────────────────
+  //
+  // Same adapter pattern as gateFor above, but restricted to the 'move' action
+  // for use in validateDrop. When canPerformAction is undefined, gateMove is
+  // undefined too — validateDrop skips the permission check (default-allow).
+  const gateMove = useMemo<((action: 'move', node: TreeNode) => boolean) | undefined>(() => {
+    if (!canPerformAction) return undefined
+    return (action, node) => canPerformAction(action, currentUser, node)
+  }, [canPerformAction, currentUser])
+
+  // ── DnD: reorder mutation ─────────────────────────────────────────────────
+  //
+  // POST /api/tree-{collectionSlug}/reorder
+  // On success: invalidate the tree cache and show a success toast.
+  // On error: show an error toast with the message from the endpoint.
+  const reorderMutation = useMutation({
+    mutationFn: async (args: {
+      nodeId: string | number
+      newParentId: string | number | null
+      newIndex: number
+    }) => {
+      const res = await fetch(`/api/tree-${collectionSlug}/reorder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(args),
+      })
+
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string }
+        throw new Error(body.error ?? `Reorder failed: ${res.status}`)
+      }
+    },
+    onSuccess: () => {
+      invalidateTree()
+      toast.push({ variant: 'success', message: 'Move saved.' })
+    },
+    onError: (err: unknown) => {
+      const message = err instanceof Error ? err.message : 'Move failed.'
+      toast.push({ variant: 'error', message })
+    },
+  })
+
   // ── Tree query ───────────────────────────────────────────────────────────
   const { data, isLoading, isError, error } = useQuery<TreeApiResponse>({
     queryKey: ['tree', collectionSlug],
@@ -265,6 +315,30 @@ function ContentTreeInner({
         return res.json() as Promise<TreeApiResponse>
       }),
   })
+
+  // ── DnD: byId map ────────────────────────────────────────────────────────
+  //
+  // Pre-built flat map of all tree nodes by String(id). Recomputed whenever
+  // `data` changes (declared above by useQuery). Used by validateDrop for
+  // cycle detection and depth checks without needing extra network calls.
+  //
+  // Recursive walk mirrors the nested TreeNode.children structure.
+  const byId = useMemo<Map<string, TreeNode>>(() => {
+    const map = new Map<string, TreeNode>()
+    if (!data?.nodes) return map
+
+    function walk(nodes: TreeNode[]): void {
+      for (const node of nodes) {
+        map.set(String(node.id), node)
+        if (node.children && node.children.length > 0) {
+          walk(node.children)
+        }
+      }
+    }
+
+    walk(data.nodes)
+    return map
+  }, [data])
 
   // ── Search query ─────────────────────────────────────────────────────────
   const isSearchActive = debouncedQuery.trim().length >= 2
@@ -292,6 +366,59 @@ function ContentTreeInner({
     handleAutoExpand(expandIdsAsStrings)
     setHighlightIds(new Set(searchData.results.map((n) => String(n.id))))
   }, [searchData, isSearchActive, handleAutoExpand])
+
+  // ── DnD: onMove handler ──────────────────────────────────────────────────
+  //
+  // Called by <TreeArborist> when the user completes a drag-and-drop operation.
+  // Validates the proposed move client-side first (validateDrop), then fires
+  // the reorder mutation if valid. On rejection, surfaces the error via toast.
+  const handleMove = useCallback(
+    ({
+      dragIds,
+      parentId,
+      index,
+    }: {
+      dragIds: string[]
+      parentId: string | null
+      index: number
+    }) => {
+      // Look up the dragged node (use the first id — single-select drag only)
+      const firstId = dragIds[0]
+      if (!firstId) return
+
+      const draggedNode = byId.get(firstId)
+      if (!draggedNode) {
+        toast.push({ variant: 'error', message: 'Dragged node not found in tree.' })
+        return
+      }
+
+      // Look up the new parent (null = root)
+      const newParent = parentId !== null ? (byId.get(parentId) ?? null) : null
+
+      // Client-side validation
+      const validation = validateDrop({
+        draggedNode,
+        newParent,
+        byId,
+        maxDepth,
+        insertOptions,
+        canPerformAction: gateMove,
+      })
+
+      if (!validation.ok) {
+        toast.push({ variant: 'error', message: validation.message })
+        return
+      }
+
+      // Fire the server mutation
+      reorderMutation.mutate({
+        nodeId: draggedNode.id,
+        newParentId: newParent?.id ?? null,
+        newIndex: index,
+      })
+    },
+    [byId, maxDepth, insertOptions, gateMove, reorderMutation, toast],
+  )
 
   // ── Error messages ───────────────────────────────────────────────────────
   const treeErrorMessage =
@@ -525,8 +652,8 @@ function ContentTreeInner({
         }
 
         case 'move': {
-          // Phase 5 (#24) — DnD wired to reorderNodes
-          console.warn('[ContentTree] move action not yet implemented (Phase 5 #24)')
+          // Phase 5 (#24) — DnD handles moves. The context-menu 'move' action
+          // is a no-op here; drag-and-drop is the primary move affordance.
           break
         }
       }
@@ -598,6 +725,7 @@ function ContentTreeInner({
               highlightIds={highlightIds}
               onSelect={setSelected}
               onContextMenu={handleContextMenu}
+              onMove={handleMove}
             />
           )}
         </div>

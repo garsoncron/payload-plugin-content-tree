@@ -13,6 +13,7 @@ import { validateCollection } from './server/helpers/validateCollection'
 import { treeEndpoint } from './server/endpoints/tree'
 import { searchEndpoint } from './server/endpoints/search'
 import { duplicateEndpoint } from './server/endpoints/duplicate'
+import { reorderEndpoint } from './server/endpoints/reorder'
 
 const VIEW_KEY = 'fishtankContentTree'
 const VIEW_PATH = '@garsoncron/payload-plugin-content-tree/client#ContentTreeView'
@@ -49,6 +50,7 @@ export const contentTreePlugin =
       treeEndpoint(opts),
       searchEndpoint(opts),
       duplicateEndpoint(opts),
+      reorderEndpoint(opts),
     ]
 
     return config

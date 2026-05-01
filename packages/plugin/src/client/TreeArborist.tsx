@@ -31,7 +31,7 @@
 
 import React, { useEffect, useRef } from 'react'
 import { Tree } from 'react-arborist'
-import type { NodeRendererProps, TreeApi } from 'react-arborist'
+import type { MoveHandler, NodeRendererProps, TreeApi } from 'react-arborist'
 import type { TreeNode } from '../shared/types'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -138,8 +138,7 @@ function NodeRow({ style, node, onToggleProp, highlightIds, onContextMenuProp }:
 // ─── TreeArborist ─────────────────────────────────────────────────────────────
 
 export function TreeArborist(props: Props) {
-  const { data, onSelect, initialOpenState, onToggle, highlightIds, onContextMenu } = props
-  // onMove is accepted for forward-compat (#24) — disableDrag keeps the tree read-only.
+  const { data, onSelect, initialOpenState, onToggle, highlightIds, onContextMenu, onMove } = props
 
   // react-arborist's `initialOpenState` only seeds on mount and does not
   // react to subsequent prop changes. To make search-driven auto-expand
@@ -191,6 +190,27 @@ export function TreeArborist(props: Props) {
     [onToggle, highlightIds, onContextMenu],
   )
 
+  /**
+   * Adapt arborist's MoveHandler to the simpler Props.onMove interface.
+   *
+   * Single-select drag only — multi-select drag is out of scope for v0.1.
+   * When multiple nodes are dragged (e.g. via keyboard multi-select), only
+   * the first id is honoured. This is consistent with the server endpoint
+   * which operates on a single nodeId per request.
+   *
+   * The arborist MoveHandler signature (react-arborist 3.5.x):
+   *   { dragIds: string[], dragNodes: NodeApi[], parentId: string | null, parentNode: NodeApi | null, index: number }
+   */
+  const handleArboristMove: MoveHandler<TreeNode> | undefined = onMove
+    ? ({ dragIds, parentId, index }) => {
+        if (dragIds.length === 0) return
+        // Only honour the first dragged id for single-select drag
+        const firstId = dragIds[0]
+        if (!firstId) return
+        onMove({ dragIds: [firstId], parentId, index })
+      }
+    : undefined
+
   return (
     <Tree<TreeNode>
       ref={treeRef}
@@ -200,10 +220,11 @@ export function TreeArborist(props: Props) {
       // childrenAccessor: arborist looks for node.children by default;
       // TreeNode.children is already `TreeNode[] | undefined` which matches.
       childrenAccessor="children"
-      // Phase 2: read-only. DnD unlocked in Phase 5 (#24).
-      disableDrag={true}
-      // Editing (rename inline) is Phase 4 (#19) — disable for now.
+      // Phase 5 (#24): DnD enabled. disableDrag was true in Phase 2.
+      // Editing (rename inline) is via context menu — keep disableEdit.
       disableEdit={true}
+      // Wire arborist's onMove to our adapter
+      onMove={handleArboristMove}
       // Width fills the container; height is fixed at 600px.
       // TODO(#12): upgrade to useResizeObserver so the tree fills its parent.
       width="100%"

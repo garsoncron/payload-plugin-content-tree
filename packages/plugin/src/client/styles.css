@@ -418,6 +418,31 @@
   color: var(--theme-error-700, #b91c1c);
 }
 
+/* ── DnD drop indicator (Phase 5, #24) ──────────────────────────────────── */
+
+/*
+ * react-arborist renders a drop cursor line between rows during drag-over.
+ * It applies the class .drop-target or uses its own internal cursor element.
+ * The `--ct-drop-indicator` variable lets consumers restyle the line color.
+ *
+ * The cursor element rendered by react-arborist is a <div> with
+ * `role="presentation"` positioned absolutely. We target it by setting the
+ * CSS variable that arborist picks up via its own stylesheet, plus a fallback
+ * rule for any custom renderCursor implementations.
+ */
+:root {
+  --ct-drop-indicator: var(--theme-elevation-500, #6b7280);
+}
+
+/* Arborist renders its internal drop cursor inline; we add a visible accent
+   for any custom renderCursor wrapper the consumer might configure. */
+[data-testid='ct-drop-indicator'] {
+  height: 2px;
+  background-color: var(--ct-drop-indicator);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
 /* ── Row internals ───────────────────────────────────────────────────────── */
 
 .ct-row__chevron {
