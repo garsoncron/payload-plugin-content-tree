@@ -6,6 +6,7 @@
     "build": "pnpm -r --filter ./packages/* build",
     "dev": "pnpm --filter examples-basic dev",
     "test": "pnpm -r test",
+    "test:coverage": "pnpm -r test:coverage",
     "test:e2e": "playwright test",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",

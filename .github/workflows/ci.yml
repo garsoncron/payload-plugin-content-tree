@@ -38,8 +38,8 @@ jobs:
       - name: Type check
         run: pnpm typecheck
 
-      - name: Unit tests
-        run: pnpm -r test
+      - name: Unit tests + coverage
+        run: pnpm -r test:coverage
 
       - name: Build
         run: pnpm build

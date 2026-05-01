@@ -46,6 +46,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "compat-check": "node ./dist/compat-check.js",
     "prepare": "pnpm build",
@@ -75,6 +76,7 @@
     "react-dom": "^19.0.0",
     "tsup": "^8.3.0",
     "typescript": "^5.6.0",
+    "@vitest/coverage-v8": "^2.1.0",
     "vitest": "^2.1.0"
   }
 }
