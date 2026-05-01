@@ -28,9 +28,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
-import type { ContentTreePluginOptions, TreeNode } from '../shared/types'
+import type { ContentTreePluginOptions, ContextMenuAction, TreeNode } from '../shared/types'
 import { TreeArborist } from './TreeArborist'
 import { EditIframePane } from './EditIframePane'
+import { TreeContextMenu } from './TreeContextMenu'
 import { useExpandState } from './hooks/useExpandState'
 import './styles.css'
 
@@ -86,9 +87,36 @@ export function ContentTreeView(props: ViewProps) {
 
 // ─── Inner (uses hooks) ───────────────────────────────────────────────────────
 
-function ContentTreeInner({ collectionSlug, editUrlBuilder }: ViewProps) {
+function ContentTreeInner({
+  collectionSlug,
+  editUrlBuilder,
+  insertOptions,
+  contentTypeLabels,
+}: ViewProps) {
   // ── Selection state ──────────────────────────────────────────────────────
   const [selected, setSelected] = useState<TreeNode | null>(null)
+
+  // ── Context menu state (#19) ─────────────────────────────────────────────
+  const [menuState, setMenuState] = useState<{ x: number; y: number; node: TreeNode } | null>(null)
+
+  /**
+   * Stub action handler for #19 shell. Real action implementations land in
+   * #20 (insert/duplicate/rename/delete). For now just log and close.
+   */
+  const handleMenuAction = useCallback(
+    (action: ContextMenuAction, payload?: { contentType?: string }) => {
+      // Stub — real implementations land in #20. Log at warn so it's visible
+      // during development without triggering no-console for info.
+      console.warn('[ContentTree] context menu action (stub):', action, payload)
+      setMenuState(null)
+    },
+    [],
+  )
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, node: TreeNode) => {
+    e.preventDefault()
+    setMenuState({ x: e.clientX, y: e.clientY, node })
+  }, [])
 
   // ── Expand state (localStorage-persisted, #13) ───────────────────────────
   const expand = useExpandState({ collectionSlug })
@@ -246,6 +274,7 @@ function ContentTreeInner({ collectionSlug, editUrlBuilder }: ViewProps) {
               onToggle={handleToggle}
               highlightIds={highlightIds}
               onSelect={setSelected}
+              onContextMenu={handleContextMenu}
             />
           )}
         </div>
@@ -254,6 +283,17 @@ function ContentTreeInner({ collectionSlug, editUrlBuilder }: ViewProps) {
           <EditIframePane node={selected} editUrl={editUrl} />
         </div>
       </div>
+
+      {/* Context menu portal — mounted outside the layout split so it isn't
+          clipped by overflow:hidden on .ct-pane--tree. The component itself
+          uses createPortal(…, document.body) as a second layer of safety. */}
+      <TreeContextMenu
+        open={menuState}
+        onClose={() => setMenuState(null)}
+        onAction={handleMenuAction}
+        insertOptions={insertOptions}
+        contentTypeLabels={contentTypeLabels}
+      />
     </div>
   )
 }

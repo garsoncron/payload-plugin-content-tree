@@ -85,9 +85,10 @@ interface Props {
 type NodeRowProps = NodeRendererProps<TreeNode> & {
   onToggleProp?: (id: string, open: boolean) => void
   highlightIds?: Set<string>
+  onContextMenuProp?: (e: React.MouseEvent, node: TreeNode) => void
 }
 
-function NodeRow({ style, node, onToggleProp, highlightIds }: NodeRowProps) {
+function NodeRow({ style, node, onToggleProp, highlightIds, onContextMenuProp }: NodeRowProps) {
   const treeNode = node.data
   // Chevron direction based on arborist open/closed state
   const isOpen = node.isOpen
@@ -116,6 +117,13 @@ function NodeRow({ style, node, onToggleProp, highlightIds }: NodeRowProps) {
         }
         node.handleClick(e)
       }}
+      onContextMenu={(e) => {
+        // Prevent the native browser context menu from appearing.
+        e.preventDefault()
+        if (onContextMenuProp) {
+          onContextMenuProp(e, treeNode)
+        }
+      }}
     >
       {/* Indentation — arborist sets paddingLeft via style.paddingLeft from
           the indent prop on <Tree>; we add our own chevron + label */}
@@ -130,9 +138,8 @@ function NodeRow({ style, node, onToggleProp, highlightIds }: NodeRowProps) {
 // ─── TreeArborist ─────────────────────────────────────────────────────────────
 
 export function TreeArborist(props: Props) {
-  const { data, onSelect, initialOpenState, onToggle, highlightIds } = props
-  // onMove and onContextMenu are accepted for forward-compat (#24, #19)
-  // but not wired in this phase — disableDrag keeps the tree read-only.
+  const { data, onSelect, initialOpenState, onToggle, highlightIds, onContextMenu } = props
+  // onMove is accepted for forward-compat (#24) — disableDrag keeps the tree read-only.
 
   // react-arborist's `initialOpenState` only seeds on mount and does not
   // react to subsequent prop changes. To make search-driven auto-expand
@@ -173,10 +180,15 @@ export function TreeArborist(props: Props) {
   // not cause visible jank. If perf becomes a concern, wrap in useMemo.
   const BoundNodeRow = React.useCallback(
     (rowProps: NodeRendererProps<TreeNode>) => (
-      <NodeRow {...rowProps} onToggleProp={onToggle} highlightIds={highlightIds} />
+      <NodeRow
+        {...rowProps}
+        onToggleProp={onToggle}
+        highlightIds={highlightIds}
+        onContextMenuProp={onContextMenu}
+      />
     ),
     // Re-memoize only when the callbacks / highlight set reference changes.
-    [onToggle, highlightIds],
+    [onToggle, highlightIds, onContextMenu],
   )
 
   return (
