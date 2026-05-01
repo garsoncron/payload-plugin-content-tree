@@ -503,3 +503,43 @@
   white-space: nowrap;
   color: var(--ct-text);
 }
+
+/* ── Phase 6 — workflow gutter + lock indicator (#27) ───────────────────── */
+
+/*
+ * Fixed-width slot that always renders LEFT of the chevron. Keeping it
+ * unconditionally rendered (even when empty) means the chevron and label
+ * have a stable horizontal offset regardless of whether a given node has
+ * workflow or lock data. Without this, populated and empty rows mis-align.
+ *
+ * Width: 24 px — fits an 8 px dot + 4 px gap + 12 px lock icon comfortably.
+ * The dot color comes from an inline style (data, not theme) so no CSS var is
+ * needed for it. --ct-text-muted is reused for the lock icon.
+ *
+ * NOTE: if a new --ct-workflow-dot or --ct-lock-color theming var is needed,
+ * leave a comment here and the #29 agent will fold it into the :root surface.
+ */
+.ct-row__gutter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  width: 24px;
+  flex-shrink: 0;
+  color: var(--ct-text-muted);
+}
+
+.ct-row__workflow-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ct-row__lock {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ct-text-muted);
+  flex-shrink: 0;
+}

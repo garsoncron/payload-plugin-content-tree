@@ -19,6 +19,10 @@
  *   direction, and avoids needing a TreeApi ref.
  * - highlightIds: Set<string> passed down from search results — adds
  *   ct-row--highlighted to matching rows.
+ * - Workflow gutter slot (Phase 6, #27): fixed-width slot LEFT of chevron
+ *   showing an optional color dot (workflowState) and/or lock icon (lockedBy).
+ *   Always rendered so label alignment is stable across rows with/without
+ *   workflow or lock fields.
  *
  * Out of scope for this issue (#16):
  * - DnD (Phase 5, #24) — onMove prop accepted but unused
@@ -27,12 +31,14 @@
  * @dependencies
  * - react-arborist: Tree component, NodeApi, NodeRendererProps
  * - TreeNode: from shared/types
+ * - WORKFLOW_STATE_COLORS: from shared/constants — maps state string → hex color
  */
 
 import React, { useEffect, useRef } from 'react'
 import { Tree } from 'react-arborist'
 import type { MoveHandler, NodeRendererProps, TreeApi } from 'react-arborist'
 import type { TreeNode } from '../shared/types'
+import { WORKFLOW_STATE_COLORS } from '../shared/constants'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -61,6 +67,32 @@ interface Props {
    * Rows with ids in this set get the ct-row--highlighted class.
    */
   highlightIds?: Set<string>
+}
+
+// ─── Lock icon ────────────────────────────────────────────────────────────────
+
+/**
+ * Inline lock SVG (~12 px). aria-hidden because the wrapping <span> carries
+ * the accessible label. No external dep — kept here until #28 folds it into
+ * the icon module.
+ */
+function LockIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  )
 }
 
 // ─── Row renderer ─────────────────────────────────────────────────────────────
@@ -95,6 +127,35 @@ function NodeRow({ style, node, onToggleProp, highlightIds, onContextMenuProp }:
   const showChevron = treeNode.hasChildren
   const isHighlighted = highlightIds != null && highlightIds.has(String(treeNode.id))
 
+  // ── Workflow dot ───────────────────────────────────────────────────────────
+  // Look up the color for the current workflowState. Render only when the
+  // state is a non-empty string AND the color map has an entry for it.
+  // Unknown or empty states are silently skipped (render null) so that
+  // consumer-defined custom states don't produce a broken indicator.
+  const workflowColor =
+    treeNode.workflowState != null && treeNode.workflowState !== ''
+      ? WORKFLOW_STATE_COLORS[treeNode.workflowState]
+      : undefined
+
+  const workflowDot =
+    workflowColor != null ? (
+      <span
+        className="ct-row__workflow-dot"
+        style={{ backgroundColor: workflowColor }}
+        title={`Workflow: ${treeNode.workflowState}`}
+        aria-label={`Workflow state: ${treeNode.workflowState}`}
+      />
+    ) : null
+
+  // ── Lock icon ──────────────────────────────────────────────────────────────
+  // Render only when lockedBy is truthy (not null, not undefined, not "").
+  const lockIcon =
+    treeNode.lockedBy != null && treeNode.lockedBy !== '' ? (
+      <span className="ct-row__lock" title="Locked" aria-label="Locked by another user">
+        <LockIcon />
+      </span>
+    ) : null
+
   return (
     <div
       style={style}
@@ -126,7 +187,16 @@ function NodeRow({ style, node, onToggleProp, highlightIds, onContextMenuProp }:
       }}
     >
       {/* Indentation — arborist sets paddingLeft via style.paddingLeft from
-          the indent prop on <Tree>; we add our own chevron + label */}
+          the indent prop on <Tree>; we add gutter + chevron + label.
+
+          The gutter slot ALWAYS renders (even when both indicators are null)
+          so that the chevron and label stay at a fixed horizontal offset
+          regardless of whether workflow/lock fields are configured. Without
+          this, rows with indicators and rows without would be misaligned. */}
+      <span className="ct-row__gutter">
+        {workflowDot}
+        {lockIcon}
+      </span>
       <span className="ct-row__chevron" aria-hidden="true">
         {showChevron ? (isOpen ? '▾' : '▸') : null}
       </span>
