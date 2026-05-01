@@ -1,5 +1,5 @@
 /**
- * Public types for @fishtank/payload-plugin-content-tree.
+ * Public types for @garsoncron/payload-plugin-content-tree.
  *
  * Anything exported from this file is part of the v0.1 stable contract.
  * Internal-only types live next to their consumers, not here.

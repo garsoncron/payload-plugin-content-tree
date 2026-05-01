@@ -14,7 +14,7 @@ import { treeEndpoint } from './server/endpoints/tree'
 import { searchEndpoint } from './server/endpoints/search'
 
 const VIEW_KEY = 'fishtankContentTree'
-const VIEW_PATH = '@fishtank/payload-plugin-content-tree/client#ContentTreeView'
+const VIEW_PATH = '@garsoncron/payload-plugin-content-tree/client#ContentTreeView'
 
 export const contentTreePlugin =
   (opts: ContentTreePluginOptions): Plugin =>

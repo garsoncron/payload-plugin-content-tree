@@ -11,7 +11,7 @@
     "seed": "tsx src/seed/seed-tree.ts"
   },
   "dependencies": {
-    "@fishtank/payload-plugin-content-tree": "workspace:*",
+    "@garsoncron/payload-plugin-content-tree": "workspace:*",
     "@payloadcms/db-sqlite": "^3.84.0",
     "@payloadcms/next": "^3.84.0",
     "@payloadcms/richtext-lexical": "^3.84.0",

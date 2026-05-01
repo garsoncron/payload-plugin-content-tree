@@ -1,4 +1,4 @@
-# Project context — `@fishtank/payload-plugin-content-tree`
+# Project context — `@garsoncron/payload-plugin-content-tree`
 
 > Open this repo as a fresh Claude Code session and read this file first.
 
@@ -29,18 +29,18 @@ Inside this repo:
 
 Per PRD §14, the implementation runs in 10 tracer-bullet phases over ~40-60 hrs:
 
-| Phase | Scope                                                                                  | Tag at end      |
-| ----- | -------------------------------------------------------------------------------------- | --------------- |
-| 0     | publishable scaffold (T1) — prepare hook, ESLint, claim `@fishtank` npm scope, publish | `0.1.0-alpha.0` |
-| 1     | validateCollection real, CI flat config, basic Playwright                              | `0.1.0-alpha.1` |
-| 2     | buildTreeNodes + tree endpoint + arborist render                                       | `0.1.0-alpha.2` |
-| 3     | search endpoint + auto-expand + EditIframePane                                         | `0.1.0-alpha.3` |
-| 4     | context menu insert/duplicate/rename/delete + reorder                                  | `0.1.0-beta.0`  |
-| 5     | DnD wired to reorderNodes                                                              | `0.1.0-beta.1`  |
-| 6     | gutter, lock, icons, modal, error toasts                                               | `0.1.0-beta.2`  |
-| 7     | full test coverage, axe-core, perf budgets, CI matrix                                  | `0.1.0-rc.0`    |
-| 8     | examples (basic + with-puck + sitecore-migration), README rewrite, GIF                 | `0.1.0-rc.1`    |
-| 9     | Storybook deploy, payloadcms.com PR, Discord/HN/blog                                   | `1.0.0`         |
+| Phase | Scope                                                                                    | Tag at end      |
+| ----- | ---------------------------------------------------------------------------------------- | --------------- |
+| 0     | publishable scaffold (T1) — prepare hook, ESLint, claim `@garsoncron` npm scope, publish | `0.1.0-alpha.0` |
+| 1     | validateCollection real, CI flat config, basic Playwright                                | `0.1.0-alpha.1` |
+| 2     | buildTreeNodes + tree endpoint + arborist render                                         | `0.1.0-alpha.2` |
+| 3     | search endpoint + auto-expand + EditIframePane                                           | `0.1.0-alpha.3` |
+| 4     | context menu insert/duplicate/rename/delete + reorder                                    | `0.1.0-beta.0`  |
+| 5     | DnD wired to reorderNodes                                                                | `0.1.0-beta.1`  |
+| 6     | gutter, lock, icons, modal, error toasts                                                 | `0.1.0-beta.2`  |
+| 7     | full test coverage, axe-core, perf budgets, CI matrix                                    | `0.1.0-rc.0`    |
+| 8     | examples (basic + with-puck + sitecore-migration), README rewrite, GIF                   | `0.1.0-rc.1`    |
+| 9     | Storybook deploy, payloadcms.com PR, Discord/HN/blog                                     | `1.0.0`         |
 
 Each phase tags a release. Each phase is independently shippable.
 
@@ -50,7 +50,7 @@ Each phase tags a release. Each phase is independently shippable.
 
 - **User:** Carson Gron (`carson@getfishtank.ca`), Fishtank Consulting
 - **GitHub:** `garsoncron`. The repo will eventually transfer to the `getfishtank` org once Carson has org-admin access — GitHub redirects clones, no consumer breakage.
-- **npm:** scope `@fishtank` is unclaimed; first `npm publish --access public` claims it. Carson is not currently logged into npm on this machine — `npm login` is a Phase 0 step.
+- **npm:** scope `@garsoncron` is unclaimed; first `npm publish --access public` claims it. Carson is not currently logged into npm on this machine — `npm login` is a Phase 0 step.
 - **Auto-mode preference:** Carson runs Claude Code in auto-mode for this repo. Prefer action over planning. Phase-gate at every tag for review.
 - **Worktree convention:** primary work happens on `main`. For risky multi-day phases (e.g. Phase 4 + 5), consider a feature branch.
 
@@ -82,7 +82,7 @@ pnpm typecheck            # both packages
 pnpm test                 # unit tests
 pnpm test:e2e             # Playwright (boots examples/basic via webServer)
 pnpm build                # build the plugin package
-pnpm --filter @fishtank/payload-plugin-content-tree compat-check  # CLI smoke
+pnpm --filter @garsoncron/payload-plugin-content-tree compat-check  # CLI smoke
 ```
 
 Open `http://localhost:300X/admin` → first-user creation flow → visit `/admin/tree`.
@@ -98,7 +98,7 @@ Open `http://localhost:300X/admin` → first-user creation flow → visit `/admi
 7. Update README to mark v0.1.0-alpha.0 explicitly as "scaffold, no functionality"
 8. `npm login` (user action — pause here)
 9. `cd packages/plugin && npm publish --dry-run` (verify file manifest)
-10. `npm publish --access public` (creates `@fishtank` scope)
+10. `npm publish --access public` (creates `@garsoncron` scope)
 11. `git tag v0.1.0-alpha.0 && git push --tags`
 12. GitHub release with notes pulled from CHANGELOG
 

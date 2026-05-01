@@ -1,4 +1,4 @@
-# Product Requirements Document — `@fishtank/payload-plugin-content-tree`
+# Product Requirements Document — `@garsoncron/payload-plugin-content-tree`
 
 > **Version:** 1.0 PRD draft
 > **Status:** Approved — implementation can begin
@@ -252,7 +252,7 @@ What this does NOT commit us to:
 
 ### Distribution channels
 
-- npm: `@fishtank/payload-plugin-content-tree` (scope claimed at first publish)
+- npm: `@garsoncron/payload-plugin-content-tree` (scope claimed at first publish)
 - GitHub: `getfishtank/payload-plugin-content-tree`, public, MIT
 - Storybook: hosted on Vercel free tier
 - Docs: README + `/docs` markdown in repo (no separate docs site for v1.0)

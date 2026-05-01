@@ -11,7 +11,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "pnpm -r typecheck",
-    "compat-check": "pnpm --filter @fishtank/payload-plugin-content-tree compat-check",
+    "compat-check": "pnpm --filter @garsoncron/payload-plugin-content-tree compat-check",
     "prepare": "husky"
   },
   "lint-staged": {

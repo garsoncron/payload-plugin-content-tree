@@ -194,7 +194,7 @@ You can't publish this _and have it work_ yet. You CAN publish it as a "scaffold
 
 ## npm reality (verified just now)
 
-- `@fishtank` scope on npm is **unclaimed** — you can take it. First `npm publish` of any package in the scope creates it.
+- `@garsoncron` scope on npm is **unclaimed** — you can take it. First `npm publish` of any package in the scope creates it.
 - `payload-plugin-content-tree` (unscoped) is **available** — viable fallback if you want zero scope-management overhead.
 - `@payloadcms/plugin-content-tree` is **available** — but you cannot publish into the `@payloadcms` scope; that's owned by Payload Inc. Don't try.
 - You're **not logged into npm** on this machine. `npm login` (or `npm adduser`) is step zero of publishing.
@@ -268,10 +268,10 @@ cd packages/plugin
 npm publish --dry-run        # shows the file manifest
 
 # 4. Real publish (after T2 work is done)
-npm publish --access public  # creates @fishtank scope on first publish
+npm publish --access public  # creates @garsoncron scope on first publish
 
 # 5. Verify
-npm view @fishtank/payload-plugin-content-tree
+npm view @garsoncron/payload-plugin-content-tree
 # install in a throwaway sandbox, run dev, confirm /admin/tree works
 ```
 

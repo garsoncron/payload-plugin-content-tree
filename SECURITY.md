@@ -34,7 +34,7 @@ Include:
 
 In scope:
 
-- The published `@fishtank/payload-plugin-content-tree` package
+- The published `@garsoncron/payload-plugin-content-tree` package
 - The example sandboxes in this repo (`examples/*`) where they expose the plugin
 
 Out of scope:

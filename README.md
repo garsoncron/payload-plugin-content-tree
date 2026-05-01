@@ -1,4 +1,4 @@
-# @fishtank/payload-plugin-content-tree
+# @garsoncron/payload-plugin-content-tree
 
 > Sitecore-style hierarchical content browser for Payload CMS 3.x admin.
 
@@ -14,7 +14,7 @@
 ## Install
 
 ```bash
-pnpm add @fishtank/payload-plugin-content-tree@alpha
+pnpm add @garsoncron/payload-plugin-content-tree@alpha
 ```
 
 ## Where this is going
@@ -35,7 +35,7 @@ See [`PRD.md`](./PRD.md) §5 for the complete v1.0 scope and §6 for the locked 
 
 ```ts
 // payload.config.ts
-import { contentTreePlugin } from '@fishtank/payload-plugin-content-tree'
+import { contentTreePlugin } from '@garsoncron/payload-plugin-content-tree'
 
 export default buildConfig({
   collections: [Pages /* must define parent, sortOrder, contentType, title */],

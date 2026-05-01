@@ -27,7 +27,7 @@ StackBlitz beats a description. If pasting code, keep it minimal.
 
 ## Environment
 
-- `@fishtank/payload-plugin-content-tree` version:
+- `@garsoncron/payload-plugin-content-tree` version:
 - `payload` version:
 - `@payloadcms/ui` version:
 - Node version (`node -v`):

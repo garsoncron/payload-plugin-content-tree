@@ -38,7 +38,7 @@ src/app/api/tree/search/route.ts
 Add to `payload.config.ts`:
 
 ```ts
-import { contentTreePlugin } from '@fishtank/payload-plugin-content-tree'
+import { contentTreePlugin } from '@garsoncron/payload-plugin-content-tree'
 
 plugins: [
   contentTreePlugin({

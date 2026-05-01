@@ -8,7 +8,7 @@
 import { buildConfig } from 'payload'
 import { sqliteAdapter } from '@payloadcms/db-sqlite'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
-import { contentTreePlugin } from '@fishtank/payload-plugin-content-tree'
+import { contentTreePlugin } from '@garsoncron/payload-plugin-content-tree'
 import { Pages } from './collections/Pages'
 import path from 'path'
 import { fileURLToPath } from 'url'
