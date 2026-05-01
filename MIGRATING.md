@@ -23,15 +23,15 @@ doesn't exist yet.
 The plugin **does not inject fields** into your collection. You define them; the plugin validates
 them at `buildConfig` time and throws a copy-pasteable error if anything is missing or mistyped.
 
-| Field | Payload type | Role | Required |
-|---|---|---|---|
-| `parent` | `relationship` (self) | Points to the parent node; `null` = root | yes |
-| `sortOrder` | `number` | Zero-based position among siblings | yes |
-| `contentType` | `select` | Drives the insert-options table (Sitecore parity) | yes |
-| `title` | `text` (or any text-ish field) | Displayed in the tree row | yes |
-| `slug` | `text` | Used by deep search; indexed | no |
-| `workflowState` | `select` | Shown as a colored gutter dot | no — only if mapped via `fields.workflowState` |
-| `lockedBy` | `relationship` to users | Shown as a lock icon | no — only if mapped via `fields.lockedBy` |
+| Field           | Payload type                   | Role                                              | Required                                       |
+| --------------- | ------------------------------ | ------------------------------------------------- | ---------------------------------------------- |
+| `parent`        | `relationship` (self)          | Points to the parent node; `null` = root          | yes                                            |
+| `sortOrder`     | `number`                       | Zero-based position among siblings                | yes                                            |
+| `contentType`   | `select`                       | Drives the insert-options table (Sitecore parity) | yes                                            |
+| `title`         | `text` (or any text-ish field) | Displayed in the tree row                         | yes                                            |
+| `slug`          | `text`                         | Used by deep search; indexed                      | no                                             |
+| `workflowState` | `select`                       | Shown as a colored gutter dot                     | no — only if mapped via `fields.workflowState` |
+| `lockedBy`      | `relationship` to users        | Shown as a lock icon                              | no — only if mapped via `fields.lockedBy`      |
 
 All four required field names can be overridden via the plugin's `fields` option if your existing
 collection uses different names:
@@ -40,10 +40,10 @@ collection uses different names:
 contentTreePlugin({
   collectionSlug: 'pages',
   fields: {
-    parent: 'parentPage',      // default: 'parent'
-    sortOrder: 'order',        // default: 'sortOrder'
-    contentType: 'template',   // default: 'contentType'
-    title: 'name',             // default: 'title'
+    parent: 'parentPage', // default: 'parent'
+    sortOrder: 'order', // default: 'sortOrder'
+    contentType: 'template', // default: 'contentType'
+    title: 'name', // default: 'title'
   },
 })
 ```
@@ -142,7 +142,7 @@ async function backfill() {
   const { docs } = await payload.find({
     collection: 'pages',
     depth: 0,
-    limit: 0,       // fetch all
+    limit: 0, // fetch all
     sort: 'createdAt',
   })
 
@@ -172,7 +172,10 @@ async function backfill() {
   process.exit(0)
 }
 
-backfill().catch((err) => { console.error(err); process.exit(1) })
+backfill().catch((err) => {
+  console.error(err)
+  process.exit(1)
+})
 ```
 
 ```bash
@@ -186,7 +189,9 @@ If your collection already has a template or category field, alias it via the `f
 
 ```ts
 // One-time normalization — run once, then remove
-await payload.db.drizzle.execute(sql`UPDATE pages SET "contentType" = 'page' WHERE "contentType" IS NULL`)
+await payload.db.drizzle.execute(
+  sql`UPDATE pages SET "contentType" = 'page' WHERE "contentType" IS NULL`,
+)
 ```
 
 ### Step 5 — (Optional) normalize lockedBy after import
@@ -216,12 +221,12 @@ export default buildConfig({
     contentTreePlugin({
       collectionSlug: 'pages',
       insertOptions: {
-        root:   ['page', 'folder'],
+        root: ['page', 'folder'],
         folder: ['page', 'folder'],
-        page:   ['page'],
+        page: ['page'],
       },
       contentTypeLabels: {
-        page:   'Page',
+        page: 'Page',
         folder: 'Folder',
       },
     }),
@@ -255,17 +260,17 @@ export default buildConfig({
 
 ### Field mapping
 
-| Sitecore concept | Payload field (this plugin) | Notes |
-|---|---|---|
-| `Item.ID` (GUID) | `id` (auto-generated) | Build a GUID → Payload ID lookup table during import |
-| `Item.TemplateName` / `Item.TemplateID` | `contentType` (select) | Normalize to your enum values during transform |
-| `Item.ParentID` | `parent` (relationship → self) | Must be resolved via the GUID lookup table |
-| `Item.SortOrder` | `sortOrder` (number) | Sitecore stores this as an integer; import directly |
-| `Item.DisplayName` | `title` (text) | Prefer `DisplayName` over `Name` for editorial readability |
-| `Item.ItemPath` (`/sitecore/content/…`) | `legacyPath` (text, indexed) | Add this field to your collection; use for 301 redirects |
-| Datasource items | separate non-tree collection | Do not put datasources in the pages tree |
-| Media Library items | Payload Media collection | Import via `payload.create` in the `media` collection |
-| Renderings / placeholders | beyond scope | Handle separately — often a Puck or custom field |
+| Sitecore concept                        | Payload field (this plugin)    | Notes                                                      |
+| --------------------------------------- | ------------------------------ | ---------------------------------------------------------- |
+| `Item.ID` (GUID)                        | `id` (auto-generated)          | Build a GUID → Payload ID lookup table during import       |
+| `Item.TemplateName` / `Item.TemplateID` | `contentType` (select)         | Normalize to your enum values during transform             |
+| `Item.ParentID`                         | `parent` (relationship → self) | Must be resolved via the GUID lookup table                 |
+| `Item.SortOrder`                        | `sortOrder` (number)           | Sitecore stores this as an integer; import directly        |
+| `Item.DisplayName`                      | `title` (text)                 | Prefer `DisplayName` over `Name` for editorial readability |
+| `Item.ItemPath` (`/sitecore/content/…`) | `legacyPath` (text, indexed)   | Add this field to your collection; use for 301 redirects   |
+| Datasource items                        | separate non-tree collection   | Do not put datasources in the pages tree                   |
+| Media Library items                     | Payload Media collection       | Import via `payload.create` in the `media` collection      |
+| Renderings / placeholders               | beyond scope                   | Handle separately — often a Puck or custom field           |
 
 > **`legacyPath` is not a plugin field.** Add it yourself if you need it:
 >
@@ -317,11 +322,11 @@ for (const item of sorted) {
   const created = await payload.create({
     collection: 'pages',
     data: {
-      title:       item.displayName,
+      title: item.displayName,
       contentType: mapTemplate(item.templateName),
-      parent:      guidToPayloadId.get(item.parentId) ?? null,
-      sortOrder:   item.sortOrder,
-      legacyPath:  item.itemPath,
+      parent: guidToPayloadId.get(item.parentId) ?? null,
+      sortOrder: item.sortOrder,
+      legacyPath: item.itemPath,
     },
   })
   guidToPayloadId.set(item.id, created.id)
@@ -368,13 +373,13 @@ export default buildConfig({
         // title: 'title',
       },
       insertOptions: {
-        root:   ['page', 'folder', 'landing'],
+        root: ['page', 'folder', 'landing'],
         folder: ['page', 'folder'],
-        page:   ['page'],
+        page: ['page'],
       },
       contentTypeLabels: {
-        page:    'Page',
-        folder:  'Folder',
+        page: 'Page',
+        folder: 'Folder',
         landing: 'Landing Page',
       },
       maxDepth: 5,
@@ -417,7 +422,6 @@ Run these checks in order after completing either migration path:
    appear without expanding.
 
 3. **Exercise the core interactions:**
-
    - Expand a parent node and verify children load
    - Use the search bar to find a specific page by title; verify the tree auto-expands to reveal it
    - Right-click a node and verify the context menu appears with the correct insert options for
@@ -468,12 +472,12 @@ Run these checks in order after completing either migration path:
 
 ## Cross-references
 
-| Resource | Purpose |
-|---|---|
-| [./README.md](./README.md) | Top-level overview, install, quick-start |
-| [./PRD.md §6](./PRD.md) | Locked API contract and required field spec |
-| [./examples/basic](./examples/basic) | Starting fresh — minimal working collection |
-| [./examples/sitecore-migration](./examples/sitecore-migration) | Runnable Sitecore seed script and full narrative |
-| [./CONTRIBUTING.md](./CONTRIBUTING.md) | Bug reports, PRs, help |
+| Resource                                                                                                                   | Purpose                                                       |
+| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [./README.md](./README.md)                                                                                                 | Top-level overview, install, quick-start                      |
+| [./PRD.md §6](./PRD.md)                                                                                                    | Locked API contract and required field spec                   |
+| [./examples/basic](./examples/basic)                                                                                       | Starting fresh — minimal working collection                   |
+| [./examples/sitecore-migration](./examples/sitecore-migration)                                                             | Runnable Sitecore seed script and full narrative              |
+| [./CONTRIBUTING.md](./CONTRIBUTING.md)                                                                                     | Bug reports, PRs, help                                        |
 | [`./packages/plugin/src/server/helpers/validateCollection.ts`](./packages/plugin/src/server/helpers/validateCollection.ts) | Validator source — read to understand exactly what is checked |
-| [`./packages/plugin/src/server/helpers/reorderNodes.ts`](./packages/plugin/src/server/helpers/reorderNodes.ts) | Sort-order strategy — the `× 10` stride and cycle detection |
+| [`./packages/plugin/src/server/helpers/reorderNodes.ts`](./packages/plugin/src/server/helpers/reorderNodes.ts)             | Sort-order strategy — the `× 10` stride and cycle detection   |
