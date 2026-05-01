@@ -1,4 +1,4 @@
-import { defineConfig } from '@playwright/test'
+import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -10,9 +10,19 @@ export default defineConfig({
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
   },
+  // Smoke tests run chromium only. WebKit/Firefox are deferred to Phase 7.
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
   webServer: {
-    command: 'pnpm --filter examples-basic dev',
-    port: 3000,
+    // Generate the Payload importMap before booting the dev server so that
+    // the ContentTreeView component is resolved at startup, not lazily.
+    command:
+      'pnpm --filter examples-basic exec payload generate:importmap && pnpm --filter examples-basic dev',
+    url: 'http://localhost:3000/admin',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },
