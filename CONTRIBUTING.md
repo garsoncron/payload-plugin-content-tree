@@ -31,8 +31,40 @@ Changesets-based flow lands in v0.5+.
 
 ## Code style
 
-- TypeScript strict.
+- TypeScript strict, `noUncheckedIndexedAccess`.
 - ESM-only.
 - No emojis in code.
 - File-level docstring on every non-trivial file.
 - Keep CSS variables namespaced under `--ct-*`.
+
+## Commit messages
+
+[Conventional Commits](https://www.conventionalcommits.org/) are enforced via `commitlint` running in a Husky `commit-msg` hook. Examples:
+
+```
+feat(plugin): add validateCollection helper
+fix(client): debounce expand-state writes
+chore(ci): add coverage threshold
+docs(readme): drop alpha caveat
+```
+
+Allowed types: `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `revert`.
+
+## Pre-commit hooks
+
+- `lint-staged` runs Prettier + ESLint (`--fix --max-warnings 0`) on staged files.
+- Bad commit messages are rejected by `commitlint`.
+
+If a hook fires unexpectedly, fix the underlying issue rather than `--no-verify`.
+
+## Scripts
+
+```bash
+pnpm lint            # eslint . --max-warnings 0
+pnpm format          # prettier --write .
+pnpm format:check    # prettier --check . (CI gate)
+pnpm typecheck       # tsc --noEmit (every package)
+pnpm test            # vitest run (every package)
+pnpm test:e2e        # playwright
+pnpm build           # build the plugin
+```

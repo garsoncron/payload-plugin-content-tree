@@ -29,18 +29,18 @@ Inside this repo:
 
 Per PRD §14, the implementation runs in 10 tracer-bullet phases over ~40-60 hrs:
 
-| Phase | Scope | Tag at end |
-|---|---|---|
-| 0 | publishable scaffold (T1) — prepare hook, ESLint, claim `@fishtank` npm scope, publish | `0.1.0-alpha.0` |
-| 1 | validateCollection real, CI flat config, basic Playwright | `0.1.0-alpha.1` |
-| 2 | buildTreeNodes + tree endpoint + arborist render | `0.1.0-alpha.2` |
-| 3 | search endpoint + auto-expand + EditIframePane | `0.1.0-alpha.3` |
-| 4 | context menu insert/duplicate/rename/delete + reorder | `0.1.0-beta.0` |
-| 5 | DnD wired to reorderNodes | `0.1.0-beta.1` |
-| 6 | gutter, lock, icons, modal, error toasts | `0.1.0-beta.2` |
-| 7 | full test coverage, axe-core, perf budgets, CI matrix | `0.1.0-rc.0` |
-| 8 | examples (basic + with-puck + sitecore-migration), README rewrite, GIF | `0.1.0-rc.1` |
-| 9 | Storybook deploy, payloadcms.com PR, Discord/HN/blog | `1.0.0` |
+| Phase | Scope                                                                                  | Tag at end      |
+| ----- | -------------------------------------------------------------------------------------- | --------------- |
+| 0     | publishable scaffold (T1) — prepare hook, ESLint, claim `@fishtank` npm scope, publish | `0.1.0-alpha.0` |
+| 1     | validateCollection real, CI flat config, basic Playwright                              | `0.1.0-alpha.1` |
+| 2     | buildTreeNodes + tree endpoint + arborist render                                       | `0.1.0-alpha.2` |
+| 3     | search endpoint + auto-expand + EditIframePane                                         | `0.1.0-alpha.3` |
+| 4     | context menu insert/duplicate/rename/delete + reorder                                  | `0.1.0-beta.0`  |
+| 5     | DnD wired to reorderNodes                                                              | `0.1.0-beta.1`  |
+| 6     | gutter, lock, icons, modal, error toasts                                               | `0.1.0-beta.2`  |
+| 7     | full test coverage, axe-core, perf budgets, CI matrix                                  | `0.1.0-rc.0`    |
+| 8     | examples (basic + with-puck + sitecore-migration), README rewrite, GIF                 | `0.1.0-rc.1`    |
+| 9     | Storybook deploy, payloadcms.com PR, Discord/HN/blog                                   | `1.0.0`         |
 
 Each phase tags a release. Each phase is independently shippable.
 

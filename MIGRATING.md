@@ -44,10 +44,13 @@ plugins: [
   contentTreePlugin({
     collectionSlug: 'pages',
     fields: { workflowState: 'workflowState', lockedBy: 'lockedBy' },
-    insertOptions: { /* paste from old insertOptions.ts */ },
-    contentTypeLabels: { /* paste */ },
-    canPerformAction: (action, user) =>
-      !(action === 'delete' && user?.role === 'author'),
+    insertOptions: {
+      /* paste from old insertOptions.ts */
+    },
+    contentTypeLabels: {
+      /* paste */
+    },
+    canPerformAction: (action, user) => !(action === 'delete' && user?.role === 'author'),
   }),
 ]
 ```

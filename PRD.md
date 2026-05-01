@@ -5,6 +5,7 @@
 > **Author:** Carson Gron (Fishtank Consulting)
 > **Date:** 2026-05-01
 > **Companion docs:**
+>
 > - `AUDIT.md` — current-state assessment + gap analysis
 > - `merry-scribbling-hejlsberg/.ai-reports/spike-content-tree-plugin.md` — original spike (what & why)
 > - `merry-scribbling-hejlsberg/.ai-reports/spike-content-tree-plugin-sketch.md` — code skeleton
@@ -57,6 +58,7 @@ Not sold (T1/T2) on this is not the answer. T3 (full polish, real maintenance) i
 ## 4. Target users (personas)
 
 ### Persona 1 — Maya, Sitecore Migration Lead at a 50-person agency
+
 - Inherited a 200-page Sitecore site that needs to leave Sitecore in Q3
 - Looked at Payload, loved the developer experience, hated that the admin doesn't look like Sitecore
 - Found this plugin via Google ("payload sitecore alternative tree view")
@@ -64,12 +66,14 @@ Not sold (T1/T2) on this is not the answer. T3 (full polish, real maintenance) i
 - **Implication:** README and search-engine presence must answer "Sitecore alternative" queries
 
 ### Persona 2 — Devon, Tech Lead on a hierarchical-content Payload build
+
 - Building a multi-level docs site or product hierarchy
 - Wants a tree, hates wiring `nested-docs` plugin + a custom view from scratch
 - Discovers via Payload Discord
 - **Implication:** plugin must work with `@payloadcms/plugin-nested-docs` cleanly
 
 ### Persona 3 — Ana, Fishtank developer
+
 - Spinning up the Nth client project that needs the same admin UX
 - Just wants to `pnpm add` and configure
 - **Implication:** sane defaults, minimal-config path, escape hatches for FRAS-style customization
@@ -78,33 +82,33 @@ Not sold (T1/T2) on this is not the answer. T3 (full polish, real maintenance) i
 
 ### IN scope
 
-| Feature | Notes |
-|---|---|
+| Feature                                                   | Notes                                                               |
+| --------------------------------------------------------- | ------------------------------------------------------------------- |
 | Single-collection tree on self-referencing `parent` field | Required field shape: `parent`, `sortOrder`, `contentType`, `title` |
-| Lazy-load children on expand | Single bulk fetch + in-memory map; no N+1 |
-| Persisted expand state | localStorage |
-| Right-click context menu | Insert (config-driven), Duplicate, Rename, Delete, Open in new tab |
-| DnD reorder + reparent | atomic parent + sortOrder update |
-| Deep search with auto-expand | server-side title + slug search; returns ancestor IDs |
-| Workflow gutter | optional, opt-in via `fields.workflowState` mapping |
-| Lock indicator | optional, opt-in via `fields.lockedBy` mapping |
-| `editUrlBuilder` config | for Puck-style integrations |
-| `canPerformAction` callback | role-based action gating |
-| React 18 + 19 | both verified in CI matrix |
-| Payload 3.0+ | minimum + latest 3.x in CI |
-| Postgres + SQLite verified | MongoDB best-effort, not in CI |
+| Lazy-load children on expand                              | Single bulk fetch + in-memory map; no N+1                           |
+| Persisted expand state                                    | localStorage                                                        |
+| Right-click context menu                                  | Insert (config-driven), Duplicate, Rename, Delete, Open in new tab  |
+| DnD reorder + reparent                                    | atomic parent + sortOrder update                                    |
+| Deep search with auto-expand                              | server-side title + slug search; returns ancestor IDs               |
+| Workflow gutter                                           | optional, opt-in via `fields.workflowState` mapping                 |
+| Lock indicator                                            | optional, opt-in via `fields.lockedBy` mapping                      |
+| `editUrlBuilder` config                                   | for Puck-style integrations                                         |
+| `canPerformAction` callback                               | role-based action gating                                            |
+| React 18 + 19                                             | both verified in CI matrix                                          |
+| Payload 3.0+                                              | minimum + latest 3.x in CI                                          |
+| Postgres + SQLite verified                                | MongoDB best-effort, not in CI                                      |
 
 ### OUT of scope (explicit non-goals)
 
-| Feature | Why out |
-|---|---|
-| Multi-collection trees | Defer to v2.0; expensive scope |
+| Feature                         | Why out                                              |
+| ------------------------------- | ---------------------------------------------------- |
+| Multi-collection trees          | Defer to v2.0; expensive scope                       |
 | Custom node renderers as config | Advanced consumers wrap `<ContentTreeView>` directly |
-| Built-in workflow engine | We visualize, we don't manage |
-| Permissions system | Delegated to `canPerformAction` callback |
-| Search backend integration | Title/slug only; Meilisearch is out of scope |
-| Built-in i18n of menu labels | Consumers pass `labels` config |
-| Theme system | Use CSS vars (`--ct-*`); restyle via consumer CSS |
+| Built-in workflow engine        | We visualize, we don't manage                        |
+| Permissions system              | Delegated to `canPerformAction` callback             |
+| Search backend integration      | Title/slug only; Meilisearch is out of scope         |
+| Built-in i18n of menu labels    | Consumers pass `labels` config                       |
+| Theme system                    | Use CSS vars (`--ct-*`); restyle via consumer CSS    |
 
 ### DEFERRED to v1.1+
 
@@ -149,46 +153,49 @@ contentTreePlugin({
 
 The plugin **does not inject fields** — consumer defines them. Plugin validates at `buildConfig` time and throws with a copy-pasteable error if missing.
 
-| Field | Type | Required |
-|---|---|---|
-| Parent | `relationship` (self) | yes |
-| Sort order | `number` | yes |
-| Content type | `select` | yes |
-| Title | text-ish | yes |
-| Slug | `text` | no |
-| Workflow state | `select` | no — required only if you map it |
-| Locked by | `relationship` to users | no — required only if you map it |
+| Field          | Type                    | Required                         |
+| -------------- | ----------------------- | -------------------------------- |
+| Parent         | `relationship` (self)   | yes                              |
+| Sort order     | `number`                | yes                              |
+| Content type   | `select`                | yes                              |
+| Title          | text-ish                | yes                              |
+| Slug           | `text`                  | no                               |
+| Workflow state | `select`                | no — required only if you map it |
+| Locked by      | `relationship` to users | no — required only if you map it |
 
 ## 7. Differentiation vs Payload's native tree (RFC #13982)
 
 When Payload ships native tree (target: late 2026), this plugin's continued reason to exist:
 
-| Capability | Payload native (RFC #13982) | This plugin |
-|---|---|---|
-| Per-collection tree | yes | yes |
-| Multi-collection unified tree | unclear | v2.0 |
-| Right-click insert/duplicate/rename/delete | unlikely | yes |
-| Insert-options table (Sitecore parity) | no | yes |
-| Workflow state in gutter | no | yes |
-| Lock state in gutter | no | yes |
-| Drag-and-drop reorder | likely yes | yes |
-| Deep search w/ ancestor expand | unclear | yes |
-| Sitecore migration narrative | no | **primary positioning** |
-| `editUrlBuilder` for Puck integration | unlikely | yes |
-| `canPerformAction` for role gating | unlikely | yes |
+| Capability                                 | Payload native (RFC #13982) | This plugin             |
+| ------------------------------------------ | --------------------------- | ----------------------- |
+| Per-collection tree                        | yes                         | yes                     |
+| Multi-collection unified tree              | unclear                     | v2.0                    |
+| Right-click insert/duplicate/rename/delete | unlikely                    | yes                     |
+| Insert-options table (Sitecore parity)     | no                          | yes                     |
+| Workflow state in gutter                   | no                          | yes                     |
+| Lock state in gutter                       | no                          | yes                     |
+| Drag-and-drop reorder                      | likely yes                  | yes                     |
+| Deep search w/ ancestor expand             | unclear                     | yes                     |
+| Sitecore migration narrative               | no                          | **primary positioning** |
+| `editUrlBuilder` for Puck integration      | unlikely                    | yes                     |
+| `canPerformAction` for role gating         | unlikely                    | yes                     |
 
 **Co-existence story** (in README):
+
 > Use both — Payload's native tree for most cases, this plugin for the page tree where Sitecore-flavored UX matters or where insert options + workflow gutter add value.
 
 ## 8. Quality bar
 
 ### Tests
+
 - ≥80% coverage on `src/server/helpers/**` and `src/shared/**`
 - ≥60% on `src/client/**`
 - ≥30 unit tests covering validateCollection, buildTreeNodes, resolveAncestors, insertOptions, reorderNodes
 - ≥3 Playwright e2e: tree-loads, drag-persists, search-finds-and-expands
 
 ### CI matrix (8 combos, all required to merge)
+
 - Node 20 LTS, 22 LTS
 - React 18.3, 19.0
 - Payload 3.0.0, latest 3.x
@@ -196,20 +203,24 @@ When Payload ships native tree (target: late 2026), this plugin's continued reas
 - OS: Ubuntu only
 
 ### Performance budgets (CI hard fails)
+
 - Admin chunk ≤ 80 KB gzip
 - Tree of 1,000 nodes: server response < 500ms, client render < 100ms
 - Drag round-trip < 300ms
 
 ### Accessibility
+
 - Correct ARIA roles (`tree`, `treeitem`, `group`)
 - Keyboard nav: Tab in, arrows navigate, Enter selects, F2 rename, Delete delete
 - axe-core: 0 violations on rendered view
 - WCAG 2.1 AA: aspirational v1.0, certified v1.3
 
 ### Browser support
+
 - Chrome/Edge latest 2, Firefox latest 2, Safari 16+
 
 ### Code quality
+
 - ESLint v9 flat config, max-warnings 0
 - Prettier on commit (lint-staged + husky)
 - TypeScript strict + `noUncheckedIndexedAccess`
@@ -225,12 +236,14 @@ The literal README "Status" section:
 > **Commercial support:** for SLAs, custom features, or migration assistance, contact carson@getfishtank.ca.
 
 What this commits us to:
+
 - Weekly issue triage
 - 48-hour security response
 - SemVer (consumers can pin safely)
 - `SECURITY.md` with disclosure flow
 
 What this does NOT commit us to:
+
 - Implementing every feature request
 - Backporting fixes to old majors
 - Specific release cadence promises
@@ -238,6 +251,7 @@ What this does NOT commit us to:
 ## 10. Distribution + go-to-market
 
 ### Distribution channels
+
 - npm: `@fishtank/payload-plugin-content-tree` (scope claimed at first publish)
 - GitHub: `getfishtank/payload-plugin-content-tree`, public, MIT
 - Storybook: hosted on Vercel free tier
@@ -245,6 +259,7 @@ What this does NOT commit us to:
 - Examples: `examples/basic`, `examples/with-puck`, `examples/sitecore-migration`
 
 ### Launch sequence (v1.0.0 day)
+
 1. Tag + `npm publish --provenance`
 2. GitHub release with auto-generated notes
 3. PR to payloadcms.com community plugins directory
@@ -255,6 +270,7 @@ What this does NOT commit us to:
 8. Submit to npm trends, awesome-payload
 
 ### Discovery investments
+
 - GitHub topics: `payload`, `payload-plugin`, `payloadcms`, `cms`, `tree-view`, `sitecore`
 - npm keywords: same + `nested-docs`, `hierarchical-content`, `admin-ui`, `react-arborist`
 - README hero GIF: ≤ 5 MB, ~10s loop showing expand → DnD → context menu
@@ -262,28 +278,28 @@ What this does NOT commit us to:
 
 ## 11. Success metrics — 6-month checkpoints
 
-| Metric | Floor | Target | Stretch |
-|---|---|---|---|
-| npm weekly downloads | 50 | 200 | 1,000 |
-| GitHub stars | 25 | 100 | 500 |
-| Inbound consulting leads via plugin | 1 | 3 | 10 |
-| Production projects using it (incl. FRAS) | 1 | 3 | 10 |
-| Open / closed issue ratio | < 0.5 | < 0.3 | < 0.2 |
-| Time to first issue response (p50) | 14 days | 3 days | 24 hrs |
-| External contributors | 0 | 2 | 10 |
-| Listed in payloadcms.com directory | yes | yes | yes |
+| Metric                                    | Floor   | Target | Stretch |
+| ----------------------------------------- | ------- | ------ | ------- |
+| npm weekly downloads                      | 50      | 200    | 1,000   |
+| GitHub stars                              | 25      | 100    | 500     |
+| Inbound consulting leads via plugin       | 1       | 3      | 10      |
+| Production projects using it (incl. FRAS) | 1       | 3      | 10      |
+| Open / closed issue ratio                 | < 0.5   | < 0.3  | < 0.2   |
+| Time to first issue response (p50)        | 14 days | 3 days | 24 hrs  |
+| External contributors                     | 0       | 2      | 10      |
+| Listed in payloadcms.com directory        | yes     | yes    | yes     |
 
 **Sunset trigger:** if at 12 months metrics are below floor across the board AND no consulting leads, archive repo, mark npm package deprecated.
 
 ## 12. Roadmap
 
-| Version | Target | Headline scope |
-|---|---|---|
-| v1.0.0 | spec lock + 8 weeks | scope per §5 |
-| v1.1.0 | v1.0 + 6 weeks | move-to with tree picker, bulk multi-select, keyboard nav polish |
-| v1.2.0 | v1.0 + 12 weeks | Storybook stories per component, MongoDB CI matrix, react-arborist 4.x if released |
-| v1.3.0 | v1.0 + 20 weeks | WCAG 2.1 AA cert, full a11y audit, axe-core gate |
-| v2.0.0 | v1.0 + ~6 months | multi-collection trees, breaking config change |
+| Version | Target              | Headline scope                                                                     |
+| ------- | ------------------- | ---------------------------------------------------------------------------------- |
+| v1.0.0  | spec lock + 8 weeks | scope per §5                                                                       |
+| v1.1.0  | v1.0 + 6 weeks      | move-to with tree picker, bulk multi-select, keyboard nav polish                   |
+| v1.2.0  | v1.0 + 12 weeks     | Storybook stories per component, MongoDB CI matrix, react-arborist 4.x if released |
+| v1.3.0  | v1.0 + 20 weeks     | WCAG 2.1 AA cert, full a11y audit, axe-core gate                                   |
+| v2.0.0  | v1.0 + ~6 months    | multi-collection trees, breaking config change                                     |
 
 **Versioning posture:** 0.x = pre-release, breaking changes allowed. 1.0+ = SemVer-strict.
 
@@ -291,13 +307,13 @@ What this does NOT commit us to:
 
 ## 13. Open questions (need answers before implementation starts)
 
-| # | Question | Default if not answered |
-|---|---|---|
-| OQ1 | Storybook hosted on Vercel — Vercel account is yours/Fishtank's? | yours; switch to Fishtank when Vercel team account exists |
-| OQ2 | Commercial-support email — `carson@getfishtank.ca` or a `support@` alias? | `carson@` — direct to you |
-| OQ3 | Co-maintainer ever? Or solo-maintained explicitly forever? | solo for v1.x; reconsider at v2.0 |
-| OQ4 | Trademark/IP review at Fishtank before public release? | no — MIT license + standard OSS posture, no Fishtank-confidential code |
-| OQ5 | Submit to Payload directory PRE or POST v1.0.0? | post — needs to be production-grade before listing |
+| #   | Question                                                                  | Default if not answered                                                |
+| --- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| OQ1 | Storybook hosted on Vercel — Vercel account is yours/Fishtank's?          | yours; switch to Fishtank when Vercel team account exists              |
+| OQ2 | Commercial-support email — `carson@getfishtank.ca` or a `support@` alias? | `carson@` — direct to you                                              |
+| OQ3 | Co-maintainer ever? Or solo-maintained explicitly forever?                | solo for v1.x; reconsider at v2.0                                      |
+| OQ4 | Trademark/IP review at Fishtank before public release?                    | no — MIT license + standard OSS posture, no Fishtank-confidential code |
+| OQ5 | Submit to Payload directory PRE or POST v1.0.0?                           | post — needs to be production-grade before listing                     |
 
 ## 14. Implementation plan
 
