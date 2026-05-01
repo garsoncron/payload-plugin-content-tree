@@ -12,6 +12,7 @@ import { DEFAULT_ADMIN_PATH, DEFAULT_MAX_DEPTH } from './shared/constants'
 import { validateCollection } from './server/helpers/validateCollection'
 import { treeEndpoint } from './server/endpoints/tree'
 import { searchEndpoint } from './server/endpoints/search'
+import { duplicateEndpoint } from './server/endpoints/duplicate'
 
 const VIEW_KEY = 'fishtankContentTree'
 const VIEW_PATH = '@garsoncron/payload-plugin-content-tree/client#ContentTreeView'
@@ -43,7 +44,12 @@ export const contentTreePlugin =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(config.admin.components as any).views = views
 
-    config.endpoints = [...(config.endpoints ?? []), treeEndpoint(opts), searchEndpoint(opts)]
+    config.endpoints = [
+      ...(config.endpoints ?? []),
+      treeEndpoint(opts),
+      searchEndpoint(opts),
+      duplicateEndpoint(opts),
+    ]
 
     return config
   }
