@@ -11,12 +11,18 @@
  * - Chevron disclosure indicator when node.hasChildren is true
  * - disableDrag=true — read-only for Phase 2; DnD wired in Phase 5 (#24)
  * - Fixed height of 600px with TODO for resize-observer upgrade
+ * - initialOpenState wired from useExpandState (#13 follow-up, #16)
+ * - onToggle callback: we read node.isOpen from NodeRendererProps (the state
+ *   BEFORE the toggle fires) so we know the direction; called as
+ *   onToggle(id, !node.isOpen) from the chevron/row click. This is cleaner
+ *   than using the arborist-level onToggle(id) which gives no open/closed
+ *   direction, and avoids needing a TreeApi ref.
+ * - highlightIds: Set<string> passed down from search results — adds
+ *   ct-row--highlighted to matching rows.
  *
- * Out of scope for this issue (#12):
+ * Out of scope for this issue (#16):
  * - DnD (Phase 5, #24) — onMove prop accepted but unused
  * - Context menu (Phase 4, #19) — onContextMenu prop accepted but unused
- * - localStorage expand state (Phase 2 parallel, #13) — arborist default
- *   open-state used; #13 will plug in `initialOpenState` later
  *
  * @dependencies
  * - react-arborist: Tree component, NodeApi, NodeRendererProps
@@ -35,6 +41,26 @@ interface Props {
   onSelect: (node: TreeNode | null) => void
   onMove?: (args: { dragIds: string[]; parentId: string | null; index: number }) => void
   onContextMenu?: (e: React.MouseEvent, node: TreeNode) => void
+  /**
+   * Initial open/closed map from useExpandState (localStorage-persisted).
+   * Passed directly to react-arborist's `initialOpenState` prop.
+   */
+  initialOpenState?: Record<string, boolean>
+  /**
+   * Called when a node is toggled open or closed.
+   * id: the string id of the toggled node
+   * open: the NEW open state after the toggle
+   *
+   * We derive `open` from the row renderer's node.isOpen (the state BEFORE the
+   * toggle) and flip it: open = !node.isOpen. The row renderer's handleClick
+   * drives the actual toggle in arborist; we just mirror the direction.
+   */
+  onToggle?: (id: string, open: boolean) => void
+  /**
+   * Set of node ids to highlight (from search results).
+   * Rows with ids in this set get the ct-row--highlighted class.
+   */
+  highlightIds?: Set<string>
 }
 
 // ─── Row renderer ─────────────────────────────────────────────────────────────
@@ -48,12 +74,25 @@ interface Props {
  * Chevron logic: if the underlying TreeNode has `hasChildren === true` we
  * show a disclosure indicator regardless of whether arborist has loaded
  * children yet. This matches the lazy-load pattern planned for Phase 3.
+ *
+ * onToggle approach: arborist's built-in onToggle(id) callback only tells us
+ * WHICH node was toggled, not the NEW state. Instead, we read `node.isOpen`
+ * (the CURRENT state, BEFORE the click fires) from NodeRendererProps and call
+ * `onToggle(id, !node.isOpen)` in the onClick handler — BEFORE delegating to
+ * `node.handleClick`, which performs the actual arborist state update. This
+ * gives us the correct new open value without needing a TreeApi ref.
  */
-function NodeRow({ style, node }: NodeRendererProps<TreeNode>) {
+type NodeRowProps = NodeRendererProps<TreeNode> & {
+  onToggleProp?: (id: string, open: boolean) => void
+  highlightIds?: Set<string>
+}
+
+function NodeRow({ style, node, onToggleProp, highlightIds }: NodeRowProps) {
   const treeNode = node.data
   // Chevron direction based on arborist open/closed state
   const isOpen = node.isOpen
   const showChevron = treeNode.hasChildren
+  const isHighlighted = highlightIds != null && highlightIds.has(String(treeNode.id))
 
   return (
     <div
@@ -62,12 +101,21 @@ function NodeRow({ style, node }: NodeRendererProps<TreeNode>) {
         'ct-row',
         node.isSelected ? 'ct-row--selected' : '',
         node.isFocused ? 'ct-row--focused' : '',
+        isHighlighted ? 'ct-row--highlighted' : '',
       ]
         .filter(Boolean)
         .join(' ')}
       data-testid="content-tree-row"
       data-node-id={String(treeNode.id)}
-      onClick={node.handleClick}
+      onClick={(e) => {
+        // Mirror the toggle direction to the parent callback BEFORE arborist
+        // updates its own state. At this point node.isOpen is still the OLD
+        // state, so !node.isOpen is the NEW state the user is toggling to.
+        if (showChevron && onToggleProp) {
+          onToggleProp(String(treeNode.id), !isOpen)
+        }
+        node.handleClick(e)
+      }}
     >
       {/* Indentation — arborist sets paddingLeft via style.paddingLeft from
           the indent prop on <Tree>; we add our own chevron + label */}
@@ -82,9 +130,25 @@ function NodeRow({ style, node }: NodeRendererProps<TreeNode>) {
 // ─── TreeArborist ─────────────────────────────────────────────────────────────
 
 export function TreeArborist(props: Props) {
-  const { data, onSelect } = props
+  const { data, onSelect, initialOpenState, onToggle, highlightIds } = props
   // onMove and onContextMenu are accepted for forward-compat (#24, #19)
   // but not wired in this phase — disableDrag keeps the tree read-only.
+
+  // Bind the extra props (onToggle, highlightIds) into the row renderer via a
+  // stable wrapper. We cannot pass them via React context here without
+  // significant indirection; instead we wrap NodeRow in a closure so arborist
+  // receives a component that already has those values in scope.
+  //
+  // NOTE: This creates a new function reference on every render of TreeArborist.
+  // react-arborist re-renders the row list on data changes anyway, so this does
+  // not cause visible jank. If perf becomes a concern, wrap in useMemo.
+  const BoundNodeRow = React.useCallback(
+    (rowProps: NodeRendererProps<TreeNode>) => (
+      <NodeRow {...rowProps} onToggleProp={onToggle} highlightIds={highlightIds} />
+    ),
+    // Re-memoize only when the callbacks / highlight set reference changes.
+    [onToggle, highlightIds],
+  )
 
   return (
     <Tree<TreeNode>
@@ -104,8 +168,11 @@ export function TreeArborist(props: Props) {
       height={600}
       rowHeight={28}
       indent={20}
-      // openByDefault: let arborist manage open state.
-      // TODO(#13): wire initialOpenState from localStorage once #13 lands.
+      // Wire localStorage-persisted expand state from useExpandState (#13).
+      // On the first render this will be {} (SSR-safe); after mount it
+      // hydrates from localStorage.
+      initialOpenState={initialOpenState ?? {}}
+      // openByDefault: false — let initialOpenState drive the open state.
       openByDefault={false}
       // onSelect fires whenever the selection set changes (may be empty).
       onSelect={(nodes) => {
@@ -113,7 +180,7 @@ export function TreeArborist(props: Props) {
         onSelect(first ? first.data : null)
       }}
     >
-      {NodeRow}
+      {BoundNodeRow}
     </Tree>
   )
 }

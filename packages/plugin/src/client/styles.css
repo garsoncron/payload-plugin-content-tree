@@ -11,6 +11,14 @@
   /* Phase 6 (#29): consumers can override these to re-theme the tree */
   --ct-row-bg-selected: var(--ct-bg-selected);
   --ct-row-bg-hover: var(--ct-bg-hover);
+
+  /* Search highlight — soft yellow tint; override in consumer CSS to restyle */
+  --ct-row-bg-highlighted: rgba(234, 179, 8, 0.15);
+
+  /* Toolbar */
+  --ct-toolbar-height: 40px;
+  --ct-toolbar-border: var(--ct-border);
+  --ct-search-input-width: 300px;
 }
 
 /* ── View container ──────────────────────────────────────────────────────── */
@@ -19,9 +27,56 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 8px 0;
+  padding: 0;
   color: var(--ct-text);
   font-size: 14px;
+}
+
+/* ── Toolbar (search row) ────────────────────────────────────────────────── */
+
+.ct-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ct-toolbar-border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.ct-toolbar input[type='search'] {
+  width: var(--ct-search-input-width);
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--ct-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ct-text);
+  font-size: 13px;
+  line-height: 1.4;
+  outline: none;
+}
+
+.ct-toolbar input[type='search']:focus {
+  border-color: var(--theme-elevation-500, #6b7280);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* ── Search status pills ─────────────────────────────────────────────────── */
+
+.ct-search-status {
+  font-size: 11px;
+  font-family: monospace;
+  color: var(--ct-text-muted);
+  white-space: nowrap;
+}
+
+.ct-search-status--error {
+  color: var(--theme-error-500, #ef4444);
+}
+
+.ct-search-status--muted {
+  color: var(--ct-text-muted);
 }
 
 /* ── Status messages (loading / error / empty) ───────────────────────────── */
@@ -59,6 +114,20 @@
 .ct-row--focused {
   outline: 2px solid var(--theme-elevation-500, #6b7280);
   outline-offset: -2px;
+}
+
+/* Search highlight — applies a soft yellow tint to matching rows */
+.ct-row--highlighted {
+  background-color: var(--ct-row-bg-highlighted);
+}
+
+/* Highlighted row keeps its tint on hover (slightly darker via stack) */
+.ct-row--highlighted:hover {
+  background-color: color-mix(
+    in srgb,
+    var(--ct-row-bg-highlighted) 70%,
+    var(--ct-row-bg-hover) 30%
+  );
 }
 
 /* ── Row internals ───────────────────────────────────────────────────────── */
