@@ -7,4 +7,76 @@
   --ct-text: var(--theme-elevation-800, #1f2937);
   --ct-text-muted: var(--theme-elevation-500, #6b7280);
   --ct-border: var(--theme-elevation-150, #e5e7eb);
+
+  /* Phase 6 (#29): consumers can override these to re-theme the tree */
+  --ct-row-bg-selected: var(--ct-bg-selected);
+  --ct-row-bg-hover: var(--ct-bg-hover);
+}
+
+/* ── View container ──────────────────────────────────────────────────────── */
+
+.ct-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 8px 0;
+  color: var(--ct-text);
+  font-size: 14px;
+}
+
+/* ── Status messages (loading / error / empty) ───────────────────────────── */
+
+.ct-status {
+  padding: 24px;
+  color: var(--ct-text-muted);
+}
+
+.ct-status--error {
+  color: var(--theme-error-500, #ef4444);
+}
+
+/* ── Tree rows ───────────────────────────────────────────────────────────── */
+
+.ct-row {
+  display: flex;
+  align-items: center;
+  height: var(--ct-row-height);
+  padding: 0 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  user-select: none;
+  outline: none;
+}
+
+.ct-row:hover {
+  background-color: var(--ct-row-bg-hover);
+}
+
+.ct-row--selected {
+  background-color: var(--ct-row-bg-selected);
+}
+
+.ct-row--focused {
+  outline: 2px solid var(--theme-elevation-500, #6b7280);
+  outline-offset: -2px;
+}
+
+/* ── Row internals ───────────────────────────────────────────────────────── */
+
+.ct-row__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  flex-shrink: 0;
+  color: var(--ct-text-muted);
+  font-size: 10px;
+}
+
+.ct-row__label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ct-text);
 }
