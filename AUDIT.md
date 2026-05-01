@@ -189,3 +189,114 @@ The hack-a-thon-readiness threshold is **end of Stage 4** — at that point a co
 ## Bottom line
 
 You can't publish this *and have it work* yet. You CAN publish it as a "scaffold" tag that proves the plumbing — and that has real value, because anyone wanting to learn how to author a Payload 3 plugin can clone it and read the working importMap setup. But for the RAS Canada hack-a-thon use case ("dev installs it, demos a tree"), Stage 4 is the minimum.
+
+---
+
+# Reframed: publishing as a public Payload plugin (no hack-a-thon shortcuts)
+
+> **Question:** "Forget the hack-a-thon. If I want to publish this as my own Payload module, where are we at, and what do we need to do?"
+>
+> **TL;DR:** Public bar is higher than hack-a-thon bar. Net work is the same (the implementation has to happen) but the README/tests/examples/maintenance commitments increase. Realistic estimate to a `1.0.0` you'd put your name on: **40–60 hours.** A reasonable `0.1.0` first publish: **18–22 hours.**
+
+## npm reality (verified just now)
+
+- `@fishtank` scope on npm is **unclaimed** — you can take it. First `npm publish` of any package in the scope creates it.
+- `payload-plugin-content-tree` (unscoped) is **available** — viable fallback if you want zero scope-management overhead.
+- `@payloadcms/plugin-content-tree` is **available** — but you cannot publish into the `@payloadcms` scope; that's owned by Payload Inc. Don't try.
+- You're **not logged into npm** on this machine. `npm login` (or `npm adduser`) is step zero of publishing.
+
+## Three publishability tiers — be honest about which you're aiming for
+
+| Tier | Description | Threshold | Real cost |
+|---|---|---|---|
+| **T1: "Published, technically"** | npm package exists, installs cleanly, exports types, README is accurate (i.e. README admits it's a scaffold). Nobody can use it for anything but reading the importMap pattern. | Stage 1 (1 hr) + npm setup (1 hr) | **2 hrs** |
+| **T2: "Useable in 80% of cases"** | All advertised features work. Validates configs honestly. DnD, search, context menu all real. One example sandbox demonstrates it. README accurate. Smoke-tested. | Previous audit Stages 1-6 + npm + 4 hrs of docs/testing/polish | **18-22 hrs** |
+| **T3: "I'd put my name on it publicly"** | Multiple example sandboxes (basic + advanced + Puck-integration). Compatibility matrix tested (React 18+19, Payload 3.0–3.84). Storybook hosted. CI matrix green. >50% test coverage. README has GIF + badges. Issues triaged within a week. | T2 + 20-40 hrs of polish + ongoing maintenance commitment | **40-60 hrs + maintenance** |
+
+**Brutal honesty:** T1 is what the README *currently implies* is the case — it isn't. T2 is what the README *claims*. T3 is what most successful community Payload plugins look like (`payload-meilisearch`, `payload-puck`, the `@payloadcms/plugin-*` set).
+
+## What's NEW in the public-publish bar (vs hack-a-thon bar)
+
+Beyond the previous audit's Stage 1-6 (which still applies — the implementation has to happen), publishing publicly adds:
+
+### npm-specific (P0 — without these, `npm publish` either fails or publishes something broken)
+
+1. **`npm login` on this machine** — `npm adduser` or `npm login`. 2FA recommended (`npm profile enable-2fa auth-and-writes`).
+2. **`publishConfig` in package.json** — scoped packages default to `restricted` (private). Need:
+   ```json
+   "publishConfig": { "access": "public", "provenance": true }
+   ```
+   Without `access: public`, `npm publish` fails on scoped packages. With `provenance: true`, npm signs the package via GitHub Actions OIDC for supply-chain trust (free, requires CI).
+3. **Replace `prepare` with `prepublishOnly`** — `prepare` runs on every install (slow for consumers); `prepublishOnly` only runs before `npm publish`. The current AUDIT recommended `prepare` for git installs — for npm, `prepublishOnly` is the right hook.
+4. **`.npmignore` or stricter `files` list** — verify with `npm publish --dry-run` what would actually be uploaded. Currently `"files": ["dist", "README.md", "LICENSE"]` — should pass, but unverified.
+5. **Version discipline** — start at `0.1.0` (not `0.0.1`), bump minors for new features in 0.x, bump major when API stabilizes. Consider `0.1.0-alpha.0` for the first publish to signal pre-release.
+6. **Add `keywords`** to package.json — gone from current state. Without these, npm search won't surface the package.
+
+### Discovery / ecosystem fit (P1 — without these, nobody finds it)
+
+7. **GitHub repo description + topics** — set `payload`, `payload-plugin`, `payloadcms`, `cms`, `tree-view`, `sitecore` as topics.
+8. **README badges** — npm version, npm downloads, license, build status. Standard fare; signals "real package."
+9. **README screenshots/GIF** — currently references a GIF that doesn't exist. For a public plugin, this is the difference between someone trying it or scrolling past.
+10. **Submit to Payload's plugin directory** — payloadcms.com lists community plugins. Submission is via PR to their docs (or a form). Worth doing for distribution.
+11. **`packageManager` matches reality** — root has `"packageManager": "pnpm@9.0.0"`. Confirm consumers using npm/yarn aren't blocked. (They aren't — that field only locks YOUR development pm.)
+
+### Maintenance signals (P1)
+
+12. **GitHub Issues + Discussions enabled** with templates (`.github/ISSUE_TEMPLATE/bug_report.md`, `feature_request.md`).
+13. **`SECURITY.md`** with disclosure address.
+14. **`CODE_OF_CONDUCT.md`** (Contributor Covenant standard).
+15. **README "Status" section** — explicit statement of what's supported, what's not, response cadence (or "best-effort, no SLA").
+16. **Renovate or Dependabot config** — keeps deps current automatically.
+17. **A real CHANGELOG** — current is a stub. Use Keep-A-Changelog format or commit conventions + auto-gen.
+
+### Quality bar (P1 — what makes this credible)
+
+18. **README accuracy is non-negotiable.** Either implement everything claimed, or rewrite the README to say "scaffold only." Currently dishonest — claims drag-and-drop, search, context menu, gutter indicators all work. None do.
+19. **Tests against public API surface.** At least: plugin function smoke (mounts view + endpoints), validateCollection error messages, buildTreeNodes shape, getAllowedInserts edge cases. Current state: 1 trivial assertion. Realistic minimum: ~30 tests covering helpers + plugin factory.
+20. **Real e2e** — currently `.skip()`. For T2: at least "load admin → see tree → expand a node → reload → still expanded." For T3: full DnD persistence verification across React 18 and 19.
+21. **Compatibility matrix** — tested against Payload 3.0 minimum, latest 3.x, React 18, React 19, Postgres + SQLite. Current: tested against Payload 3.84 + React 19 + SQLite only.
+
+### Pre-publish checklist
+
+```bash
+# 1. Account
+npm login                    # verify with: npm whoami
+npm profile enable-2fa auth-and-writes
+
+# 2. Build cleanly
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm test
+pnpm build
+
+# 3. Inspect what would publish
+cd packages/plugin
+npm publish --dry-run        # shows the file manifest
+
+# 4. Real publish (after T2 work is done)
+npm publish --access public  # creates @fishtank scope on first publish
+
+# 5. Verify
+npm view @fishtank/payload-plugin-content-tree
+# install in a throwaway sandbox, run dev, confirm /admin/tree works
+```
+
+## Recommended path
+
+Don't try to leap to T3. Do it in tiers:
+
+1. **Right now (2 hrs): publish T1.** Stage 1 work + npm setup. README rewrite to say "v0.1.0-alpha.0 — scaffold only, plumbing verified, implementation in progress." Push to GitHub, claim the npm scope, tag, publish. Honest, low-risk, gets the URL into the world.
+2. **Next sprint (16 hrs): publish T2 as 0.2.0.** Implement the stubs. Update README to remove the alpha caveat. Add badges. One CI matrix run. Now consumers can actually use it.
+3. **When you have time (20-40 hrs): polish to T3.** Storybook, advanced examples, Puck-integration example, Renovate, SECURITY.md, submit to Payload directory. This is the "I'd link this from my LinkedIn" tier.
+
+## Where you are right now
+
+```
+[████████░░░░░░░░░░░░░░░░░░░░░░░░] 25% to T1
+[████████░░░░░░░░░░░░░░░░░░░░░░░░] 25% to T2 — same prefix, longer journey
+[█████░░░░░░░░░░░░░░░░░░░░░░░░░░░] 15% to T3
+```
+
+T1 is one focused evening away. T2 is realistic in a long weekend. T3 is a multi-week side-project commitment.
+
+**The actual question to answer first:** which tier are you publishing for? T1, T2, or T3? Each has a different work plan and a different "what do I commit to maintaining" answer.
