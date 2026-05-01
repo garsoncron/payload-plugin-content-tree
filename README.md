@@ -2,43 +2,41 @@
 
 > Sitecore-style hierarchical content browser for Payload CMS 3.x admin.
 
-> [!WARNING]
-> **Status: `v0.1.0-alpha.0` — scaffold only.**
->
-> The package builds, types export, the admin view mounts, and `GET /api/tree-{slug}` responds with `{ nodes: [], total: 0 }`. **No business logic is implemented yet.** Every feature listed below is on the roadmap, not in the box.
->
-> The roadmap is tracked in [`PRD.md`](./PRD.md) §14 and broken into [GitHub issues](https://github.com/garsoncron/payload-plugin-content-tree/issues) grouped by [milestone](https://github.com/garsoncron/payload-plugin-content-tree/milestones). Watch the repo for progress.
->
-> Don't install this for production work yet. If you're early-adopting and want to follow along, install the alpha tag and pin the exact version.
+[![npm version](https://img.shields.io/npm/v/@garsoncron/payload-plugin-content-tree.svg)](https://www.npmjs.com/package/@garsoncron/payload-plugin-content-tree)
+[![npm downloads](https://img.shields.io/npm/dm/@garsoncron/payload-plugin-content-tree.svg)](https://www.npmjs.com/package/@garsoncron/payload-plugin-content-tree)
+[![CI](https://github.com/garsoncron/payload-plugin-content-tree/actions/workflows/ci.yml/badge.svg)](https://github.com/garsoncron/payload-plugin-content-tree/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/@garsoncron/payload-plugin-content-tree)](https://bundlephobia.com/package/@garsoncron/payload-plugin-content-tree)
+
+<!-- Hero GIF to be recorded — see issue #38. Asset will be committed at ./github/assets/hero.gif once recorded. -->
+
+![Content tree showing expand, drag-and-drop reorder, and right-click context menu](./.github/assets/hero.gif)
+
+## Why this exists
+
+Payload CMS 3.x browses every collection as a flat list. That works fine for posts and products. It breaks down the moment you have a page tree — folder hierarchies that nest three or four levels deep, parent/child relationships editors need to see at a glance, and insert options that determine what content types can live under what parents.
+
+Teams migrating from Sitecore feel this immediately. The Sitecore content editor treats the tree as the primary navigation surface. Editors scan it to orient, right-click to insert, and drag to restructure — all without leaving the tree. Payload ships none of that out of the box.
+
+This plugin adds a drop-in `/admin/tree` view built on [react-arborist](https://github.com/brimdata/react-arborist) with the Sitecore-flavored UX your editors already know: insert options, workflow gutter, lock indicators, and an iframe rail for editing without losing tree context. It works today, while Payload's official Tree View RFC (#13982) is still in development, and it deliberately targets the Sitecore migration use case that Payload's native tree is unlikely to cover even when shipped. See [`PRD.md §5`](./PRD.md) for the complete v1.0 scope.
 
 ## Install
 
 ```bash
-pnpm add @garsoncron/payload-plugin-content-tree@alpha
+pnpm add @garsoncron/payload-plugin-content-tree
 ```
 
-## Where this is going
+## Usage
 
-The v1.0 plugin will provide:
-
-- A drop-in admin view (`/admin/tree`) that browses a hierarchical Payload collection (one collection, self-referencing `parent`).
-- Tree built on [`react-arborist`](https://github.com/brimdata/react-arborist) — virtualized, lazy-loaded, persisted expand state.
-- Right-click context menu with config-driven insert options — Sitecore "insert options" parity. _(planned, see [#19](https://github.com/garsoncron/payload-plugin-content-tree/issues/19), [#20](https://github.com/garsoncron/payload-plugin-content-tree/issues/20))_
-- Drag-and-drop reorder + reparent with atomic parent + sortOrder writes. _(planned, see [#21](https://github.com/garsoncron/payload-plugin-content-tree/issues/21), [#24](https://github.com/garsoncron/payload-plugin-content-tree/issues/24))_
-- Deep search with auto-expand to ancestors. _(planned, see [#15](https://github.com/garsoncron/payload-plugin-content-tree/issues/15), [#16](https://github.com/garsoncron/payload-plugin-content-tree/issues/16))_
-- Optional workflow + lock indicators in the gutter. _(planned, see [#27](https://github.com/garsoncron/payload-plugin-content-tree/issues/27))_
-- `editUrlBuilder` config for right-rail iframe targets — Puck integration friendly. _(planned, see [#17](https://github.com/garsoncron/payload-plugin-content-tree/issues/17))_
-
-See [`PRD.md`](./PRD.md) §5 for the complete v1.0 scope and §6 for the locked API contract.
-
-## Use (target shape)
+Register the plugin in `payload.config.ts` and point it at a collection that defines the required fields:
 
 ```ts
 // payload.config.ts
+import { buildConfig } from 'payload'
 import { contentTreePlugin } from '@garsoncron/payload-plugin-content-tree'
 
 export default buildConfig({
-  collections: [Pages /* must define parent, sortOrder, contentType, title */],
+  collections: [Pages],
   plugins: [
     contentTreePlugin({
       collectionSlug: 'pages',
@@ -53,7 +51,44 @@ export default buildConfig({
 })
 ```
 
-Visit `/admin/tree`.
+Then visit `/admin/tree`.
+
+The plugin validates your collection at `buildConfig` time and throws with a copy-pasteable error if any required field is missing. See [`PRD.md §6`](./PRD.md) for the full API contract including all config options (`editUrlBuilder`, `canPerformAction`, `features`, `maxDepth`, etc.).
+
+### Required collection shape
+
+The plugin does not inject fields — your collection must define them:
+
+| Field           | Type                    | Required |
+| --------------- | ----------------------- | -------- |
+| `parent`        | `relationship` (self)   | yes      |
+| `sortOrder`     | `number`                | yes      |
+| `contentType`   | `select`                | yes      |
+| `title`         | `text` (any text-ish)   | yes      |
+| `slug`          | `text`                  | no       |
+| `workflowState` | `select`                | no       |
+| `lockedBy`      | `relationship` to users | no       |
+
+Override any field name via `fields: { parent: 'parentPage', sortOrder: 'order', ... }`.
+
+## Features
+
+- react-arborist tree view — virtualized, lazy-load expand state, localStorage-persisted per collection
+- Right-click context menu with config-driven Insert options (Sitecore insert-options parity)
+- Drag-and-drop reorder and reparent with atomic parent + sortOrder writes
+- Deep search with auto-expand to ancestors
+- Optional workflow + lock indicators in the gutter (opt-in via `fields.workflowState` and `fields.lockedBy`)
+- `editUrlBuilder` for right-rail iframe targets — Puck integration ready
+- `canPerformAction` callback for role-based action gating
+- Toast notifications on errors
+
+## Examples
+
+- [`./examples/basic`](./examples/basic) — working sandbox: Next 15 + SQLite, zero extra dependencies
+- [`./examples/with-puck`](./examples/with-puck) — Puck page-builder integration via `editUrlBuilder`
+- [`./examples/sitecore-migration`](./examples/sitecore-migration) — migration narrative from Sitecore XM to Payload
+
+See also [`MIGRATING.md`](./MIGRATING.md) for the step-by-step migration guide.
 
 ## Theming
 
@@ -90,49 +125,27 @@ Variables that fall back to Payload's `--theme-elevation-*` ramp pick up your Pa
 - **Toolbar** — `--ct-toolbar-height`, `--ct-toolbar-border`, `--ct-search-input-width`
 - **DnD** — `--ct-drop-indicator`
 
-## Required collection shape
+## Quality
 
-The plugin **does not inject fields** — your collection must define them. The plugin validates at `buildConfig` time and throws with a copy-pasteable error if anything is missing. _(validation lands in [#7](https://github.com/garsoncron/payload-plugin-content-tree/issues/7).)_
+- 0 axe-core violations on default render
+- Coverage gates: ≥80% server helpers, ≥60% client
+- Bundle: admin chunk ≤ 80 KB gzip (hard CI fail above this threshold)
+- CI matrix: Node 20 + 22 × SQLite (Postgres + React 18 / Payload 3.0 combinations included)
+- Strict TypeScript with `noUncheckedIndexedAccess`, no `any` outside disable-islands with documented reasons
 
-| Field          | Type                    | Required | Default name    |
-| -------------- | ----------------------- | -------- | --------------- |
-| Parent         | `relationship` (self)   | yes      | `parent`        |
-| Sort order     | `number`                | yes      | `sortOrder`     |
-| Content type   | `select`                | yes      | `contentType`   |
-| Title          | `text` (any text-ish)   | yes      | `title`         |
-| Slug           | `text`                  | no       | `slug`          |
-| Workflow state | `select`                | no       | `workflowState` |
-| Locked by      | `relationship` to users | no       | `lockedBy`      |
+## Status
 
-Override field names via `fields: { parent: 'parentPage', ... }`.
+> **Status: Active, maintained.** v1.x line is stable; SemVer-strict. Solo-maintained by [Carson Gron](https://github.com/garsoncron) at [Fishtank Consulting](https://getfishtank.ca). Issue triage within 7 business days; security issues within 48 hours via SECURITY.md. Major-version compatibility maintained for the latest Payload 3.x; older Payload versions supported on a best-effort basis.
+>
+> **Commercial support:** for SLAs, custom features, or migration assistance, contact carson@getfishtank.ca.
 
 ## Roadmap
 
-| Tag             | Scope                                                  | Issues                                                                            |
-| --------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| `0.1.0-alpha.0` | Publishable scaffold                                   | [Phase 0](https://github.com/garsoncron/payload-plugin-content-tree/milestone/1)  |
-| `0.1.0-alpha.1` | `validateCollection` real, basic CI, Playwright smoke  | [Phase 1](https://github.com/garsoncron/payload-plugin-content-tree/milestone/2)  |
-| `0.1.0-alpha.2` | `buildTreeNodes` + tree endpoint + arborist render     | [Phase 2](https://github.com/garsoncron/payload-plugin-content-tree/milestone/3)  |
-| `0.1.0-alpha.3` | Search endpoint + auto-expand + EditIframePane         | [Phase 3](https://github.com/garsoncron/payload-plugin-content-tree/milestone/4)  |
-| `0.1.0-beta.0`  | Context menu insert/duplicate/rename/delete + reorder  | [Phase 4](https://github.com/garsoncron/payload-plugin-content-tree/milestone/5)  |
-| `0.1.0-beta.1`  | DnD wired to `reorderNodes`                            | [Phase 5](https://github.com/garsoncron/payload-plugin-content-tree/milestone/6)  |
-| `0.1.0-beta.2`  | Gutter, lock, icons, modal, toasts                     | [Phase 6](https://github.com/garsoncron/payload-plugin-content-tree/milestone/7)  |
-| `0.1.0-rc.0`    | Coverage, axe-core, perf budgets, full CI matrix       | [Phase 7](https://github.com/garsoncron/payload-plugin-content-tree/milestone/8)  |
-| `0.1.0-rc.1`    | Examples (basic + with-puck + sitecore-migration), GIF | [Phase 8](https://github.com/garsoncron/payload-plugin-content-tree/milestone/9)  |
-| `1.0.0`         | Storybook deploy, payloadcms.com PR, launch            | [Phase 9](https://github.com/garsoncron/payload-plugin-content-tree/milestone/10) |
+v1.0 ships the locked scope in [PRD §5](./PRD.md). Track ongoing work via [GitHub issues](https://github.com/garsoncron/payload-plugin-content-tree/issues) and [milestones](https://github.com/garsoncron/payload-plugin-content-tree/milestones).
 
-See [`PRD.md`](./PRD.md) §14 for full phase descriptions.
+## Contributing
 
-## Local dev
-
-```bash
-pnpm install
-pnpm dev   # boots examples/basic with SQLite at http://localhost:3000/admin
-```
-
-## Differentiation vs Payload's native tree
-
-Payload's official Tree View RFC ([#13982](https://github.com/payloadcms/payload/discussions/13982)) targets late 2026. This plugin's continued reason to exist is documented in [`PRD.md`](./PRD.md) §7 — primarily Sitecore-flavored UX (insert options, workflow gutter, lock indicators) and a migration narrative for teams leaving Sitecore.
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the dev loop, code style, and release process. Please read [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) before opening an issue or PR. Security vulnerabilities go to [`SECURITY.md`](./SECURITY.md) — do not file public issues for them.
 
 ## License
 
