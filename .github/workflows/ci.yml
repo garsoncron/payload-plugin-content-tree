@@ -5,21 +5,47 @@ on:
     branches: [main]
   pull_request:
 
+# Cancel in-flight CI for the same branch on new push.
+# PRs and non-main branches are cancelled; main always runs to completion.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
 jobs:
-  test:
+  lint-test-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
-        with: { version: 9 }
+        with:
+          version: 9
+
       - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
+
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
-      - run: pnpm -r test
-      - run: pnpm build
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm -r test
+
+      - name: Build
+        run: pnpm build
+
       - name: Bundle size budget
         run: |
           ADMIN_BYTES=$(gzip -c packages/plugin/dist/client.js | wc -c)
@@ -27,3 +53,7 @@ jobs:
           if [ "$ADMIN_BYTES" -gt 81920 ]; then
             echo "::error::admin chunk over 80kB gzip budget"; exit 1
           fi
+
+      # e2e tests (Playwright / Next.js boot) are handled in issue #9 — wired separately.
+      # - name: E2E tests
+      #   run: pnpm test:e2e
