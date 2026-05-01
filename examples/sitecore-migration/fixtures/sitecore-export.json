@@ -1,0 +1,106 @@
+{
+  "exportedAt": "2024-01-15T10:00:00Z",
+  "sitecoreVersion": "10.3",
+  "items": [
+    {
+      "id": "110d559f-dea5-42ea-9c1c-8a5df7e70ef9",
+      "name": "Home",
+      "displayName": "Home",
+      "templateId": "{76036F5E-CBCE-46D1-AF0A-4143F9B557AA}",
+      "templateName": "Page",
+      "parentId": null,
+      "path": "/sitecore/content/Home",
+      "sortOrder": 100
+    },
+    {
+      "id": "31d71fe2-8647-44c0-a1c8-7e7b6bf5c6e3",
+      "name": "About",
+      "displayName": "About Us",
+      "templateId": "{76036F5E-CBCE-46D1-AF0A-4143F9B557AA}",
+      "templateName": "Page",
+      "parentId": "110d559f-dea5-42ea-9c1c-8a5df7e70ef9",
+      "path": "/sitecore/content/Home/About",
+      "sortOrder": 100
+    },
+    {
+      "id": "a3c2e5d7-1b4f-4a8c-9e2d-6f3b0c8a7e5d",
+      "name": "Team",
+      "displayName": "Our Team",
+      "templateId": "{76036F5E-CBCE-46D1-AF0A-4143F9B557AA}",
+      "templateName": "Page",
+      "parentId": "31d71fe2-8647-44c0-a1c8-7e7b6bf5c6e3",
+      "path": "/sitecore/content/Home/About/Team",
+      "sortOrder": 100
+    },
+    {
+      "id": "b7d4f2a1-9c3e-4b6f-8d1a-2e5c7f0b9a3d",
+      "name": "Products",
+      "displayName": "Products",
+      "templateId": "{A87A00B1-E6DB-45AB-8B54-636FEC3B5523}",
+      "templateName": "Folder",
+      "parentId": "110d559f-dea5-42ea-9c1c-8a5df7e70ef9",
+      "path": "/sitecore/content/Home/Products",
+      "sortOrder": 200
+    },
+    {
+      "id": "c1e8a3d6-5f2b-4c9e-7a4d-8b1f3e6c0a2e",
+      "name": "Widget-A",
+      "displayName": "Widget A",
+      "templateId": "{76036F5E-CBCE-46D1-AF0A-4143F9B557AA}",
+      "templateName": "Page",
+      "parentId": "b7d4f2a1-9c3e-4b6f-8d1a-2e5c7f0b9a3d",
+      "path": "/sitecore/content/Home/Products/Widget-A",
+      "sortOrder": 100
+    },
+    {
+      "id": "d2f9b4e7-6a3c-4d1f-8e5b-9c2a4f7e1b3d",
+      "name": "Widget-B",
+      "displayName": "Widget B",
+      "templateId": "{76036F5E-CBCE-46D1-AF0A-4143F9B557AA}",
+      "templateName": "Page",
+      "parentId": "b7d4f2a1-9c3e-4b6f-8d1a-2e5c7f0b9a3d",
+      "path": "/sitecore/content/Home/Products/Widget-B",
+      "sortOrder": 200
+    },
+    {
+      "id": "e3a1c5f8-7b4d-4e2a-9f6c-0d3b5e8a2c4f",
+      "name": "Blog",
+      "displayName": "Blog",
+      "templateId": "{A87A00B1-E6DB-45AB-8B54-636FEC3B5523}",
+      "templateName": "Folder",
+      "parentId": "110d559f-dea5-42ea-9c1c-8a5df7e70ef9",
+      "path": "/sitecore/content/Home/Blog",
+      "sortOrder": 300
+    },
+    {
+      "id": "f4b2d6a9-8c5e-4f3b-0a7d-1e4c6f9b3a5d",
+      "name": "Getting-Started",
+      "displayName": "Getting Started",
+      "templateId": "{76036F5E-CBCE-46D1-AF0A-4143F9B557AA}",
+      "templateName": "Page",
+      "parentId": "e3a1c5f8-7b4d-4e2a-9f6c-0d3b5e8a2c4f",
+      "path": "/sitecore/content/Home/Blog/Getting-Started",
+      "sortOrder": 100
+    },
+    {
+      "id": "05c3e7b0-9d6f-4a4c-1b8e-2f5d7a0c4b6e",
+      "name": "Hero-Datasource",
+      "displayName": "Hero Datasource",
+      "templateId": "{2F2A7E3B-4C9D-4E1F-A8B2-3C6D5F8E0A1B}",
+      "templateName": "Hero",
+      "parentId": "110d559f-dea5-42ea-9c1c-8a5df7e70ef9",
+      "path": "/sitecore/content/Home/Hero-Datasource",
+      "sortOrder": 400
+    },
+    {
+      "id": "16d4f8c1-0e7a-4b5d-2c9f-3a6e8b1d5c7f",
+      "name": "Media-Library",
+      "displayName": "Site Media",
+      "templateId": "{FE5DD826-48C6-436D-B87A-7C4210C7413B}",
+      "templateName": "Media folder",
+      "parentId": "110d559f-dea5-42ea-9c1c-8a5df7e70ef9",
+      "path": "/sitecore/content/Home/Media-Library",
+      "sortOrder": 500
+    }
+  ]
+}
