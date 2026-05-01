@@ -25,8 +25,20 @@
  *                built-in DELETE /api/{collectionSlug}/{id}.
  *
  * All mutations invalidate the TanStack Query cache key ['tree', collectionSlug]
- * so the tree re-fetches on success. Errors are captured in lastActionError
- * state (data-testid="action-error") as a precursor to toasts (#22).
+ * so the tree re-fetches on success. Errors are surfaced via the toast system
+ * (#22) — useToast().push({ variant: 'error', message: ... }).
+ *
+ * canPerformAction wiring (#22):
+ *   The plugin's view registration in plugin.ts strips function-shaped options
+ *   via serializableOpts, so props.canPerformAction is always undefined when
+ *   this view is mounted via Payload's importMap. Consumers wrapping
+ *   ContentTreeView in their own 'use client' shim can pass it in directly.
+ *
+ *   Internally, ContentTreeView fetches the current Payload user from
+ *   GET /api/users/me on mount (via TanStack Query) and builds a memoized
+ *   adapter that binds the user arg:
+ *     gateFor = (action, node) => canPerformAction?.(action, currentUser, node) ?? true
+ *   This adapter is passed to TreeContextMenu as its `canPerformAction` prop.
  *
  * Search endpoint contract (#15):
  *   GET /api/tree-{collectionSlug}/search?q=<string>
@@ -40,13 +52,14 @@
  *   3. null — when no node is selected
  */
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { ContentTreePluginOptions, ContextMenuAction, TreeNode } from '../shared/types'
 import { TreeArborist } from './TreeArborist'
 import { EditIframePane } from './EditIframePane'
 import { TreeContextMenu } from './TreeContextMenu'
 import { Modal } from './ui/Modal'
+import { ToastProvider, useToast } from './ui/Toast'
 import { useExpandState } from './hooks/useExpandState'
 import './styles.css'
 
@@ -66,7 +79,29 @@ interface ViewProps {
    * own 'use client' shim.
    */
   editUrlBuilder?: (node: TreeNode) => string
+  /**
+   * Optional authorization callback. Cannot survive the RSC clientProps boundary
+   * (functions are not serializable). Consumers wrapping ContentTreeView in their
+   * own 'use client' shim pass this prop to apply real permission checks.
+   *
+   * Full PRD signature:
+   *   (action: ContextMenuAction, user: PayloadUser | null, node: TreeNode) => boolean
+   *
+   * ContentTreeView resolves `user` internally (GET /api/users/me) and passes a
+   * curried version down to TreeContextMenu:
+   *   gateFor = (action, node) => canPerformAction(action, currentUser, node)
+   *
+   * When not provided, all actions are allowed (default: always-true).
+   */
   canPerformAction?: ContentTreePluginOptions['canPerformAction']
+}
+
+/**
+ * Payload /api/users/me response shape.
+ * Only the fields we use — additional fields are ignored.
+ */
+interface PayloadMeResponse {
+  user: { id: string | number; email?: string; role?: string } | null
 }
 
 interface TreeApiResponse {
@@ -106,7 +141,9 @@ const queryClient = new QueryClient({
 export function ContentTreeView(props: ViewProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      <ContentTreeInner {...props} />
+      <ToastProvider>
+        <ContentTreeInner {...props} />
+      </ToastProvider>
     </QueryClientProvider>
   )
 }
@@ -119,6 +156,7 @@ function ContentTreeInner({
   insertOptions,
   contentTypeLabels,
   fields,
+  canPerformAction,
 }: ViewProps) {
   // ── QueryClient (for cache invalidation) ─────────────────────────────────
   const qc = useQueryClient()
@@ -127,6 +165,9 @@ function ContentTreeInner({
   const invalidateTree = useCallback(() => {
     void qc.invalidateQueries({ queryKey: ['tree', collectionSlug] })
   }, [qc, collectionSlug])
+
+  // ── Toast hook ───────────────────────────────────────────────────────────
+  const toast = useToast()
 
   // ── Field name resolution ────────────────────────────────────────────────
   const titleField = fields.title ?? 'title'
@@ -145,9 +186,6 @@ function ContentTreeInner({
   const [modalState, setModalState] = useState<ModalState | null>(null)
   const [modalTitle, setModalTitle] = useState('')
   const [modalInFlight, setModalInFlight] = useState(false)
-
-  // ── Last-action error state (precursor to toasts — #22) ──────────────────
-  const [lastActionError, setLastActionError] = useState<string | null>(null)
 
   // ── Expand state (localStorage-persisted, #13) ───────────────────────────
   const expand = useExpandState({ collectionSlug })
@@ -180,6 +218,43 @@ function ContentTreeInner({
   }, [query])
 
   const [highlightIds, setHighlightIds] = useState<Set<string>>(new Set())
+
+  // ── Current user (for canPerformAction) ──────────────────────────────────
+  //
+  // Fetches GET /api/users/me on mount. The result is cached by TanStack Query
+  // with the same staleTime as tree data (30 s). If the user is null (shouldn't
+  // happen in a real admin session), we treat it as "no user" and gate all
+  // actions off when canPerformAction is provided.
+  const { data: meData } = useQuery<PayloadMeResponse>({
+    queryKey: ['users-me'],
+    queryFn: () =>
+      fetch('/api/users/me').then((res) => {
+        if (!res.ok) throw new Error(`/api/users/me failed: ${res.status}`)
+        return res.json() as Promise<PayloadMeResponse>
+      }),
+    // Don't throw — if this fails, currentUser stays undefined and we fall back
+    // to the default-allow behaviour.
+    throwOnError: false,
+  })
+
+  const currentUser = meData?.user ?? null
+
+  // ── canPerformAction adapter ─────────────────────────────────────────────
+  //
+  // The full PRD signature is:
+  //   (action: ContextMenuAction, user: PayloadUser | null, node: TreeNode) => boolean
+  //
+  // TreeContextMenu's internal prop uses a simplified version:
+  //   (action: ContextMenuAction, node: TreeNode) => boolean
+  //
+  // We build a memoised adapter here that closes over `currentUser` so the
+  // context menu doesn't need to know about the user type at all.
+  const gateFor = useMemo<
+    ((action: ContextMenuAction, node: TreeNode) => boolean) | undefined
+  >(() => {
+    if (!canPerformAction) return undefined
+    return (action, node) => canPerformAction(action, currentUser, node)
+  }, [canPerformAction, currentUser])
 
   // ── Tree query ───────────────────────────────────────────────────────────
   const { data, isLoading, isError, error } = useQuery<TreeApiResponse>({
@@ -285,12 +360,11 @@ function ContentTreeInner({
   /**
    * Submit handler for the Insert / Rename modal.
    * Dispatches to the appropriate Payload REST endpoint and invalidates the
-   * tree cache on success.
+   * tree cache on success. Errors are surfaced via toasts.
    */
   const handleModalSubmit = useCallback(async () => {
     if (!modalState) return
     setModalInFlight(true)
-    setLastActionError(null)
 
     try {
       if (modalState.kind === 'insert') {
@@ -310,16 +384,18 @@ function ContentTreeInner({
         })
 
         if (!res.ok) {
-          const body = (await res.json().catch(() => ({}))) as {
+          const resBody = (await res.json().catch(() => ({}))) as {
             message?: string
             errors?: Array<{ message: string }>
           }
-          const msg = body.errors?.[0]?.message ?? body.message ?? `Insert failed: ${res.status}`
+          const msg =
+            resBody.errors?.[0]?.message ?? resBody.message ?? `Insert failed: ${res.status}`
           throw new Error(msg)
         }
 
         invalidateTree()
         closeModal()
+        toast.push({ variant: 'success', message: 'Insert succeeded.' })
       } else if (modalState.kind === 'rename') {
         // PATCH /api/{collectionSlug}/{id} — Payload built-in update
         const res = await fetch(`/api/${collectionSlug}/${String(modalState.node.id)}`, {
@@ -329,20 +405,22 @@ function ContentTreeInner({
         })
 
         if (!res.ok) {
-          const body = (await res.json().catch(() => ({}))) as {
+          const resBody = (await res.json().catch(() => ({}))) as {
             message?: string
             errors?: Array<{ message: string }>
           }
-          const msg = body.errors?.[0]?.message ?? body.message ?? `Rename failed: ${res.status}`
+          const msg =
+            resBody.errors?.[0]?.message ?? resBody.message ?? `Rename failed: ${res.status}`
           throw new Error(msg)
         }
 
         invalidateTree()
         closeModal()
+        toast.push({ variant: 'success', message: 'Rename succeeded.' })
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Action failed.'
-      setLastActionError(msg)
+      toast.push({ variant: 'error', message: msg })
       setModalInFlight(false)
     }
   }, [
@@ -356,6 +434,7 @@ function ContentTreeInner({
     computeChildSortOrder,
     invalidateTree,
     closeModal,
+    toast,
   ])
 
   /**
@@ -373,7 +452,6 @@ function ContentTreeInner({
       setMenuState(null)
 
       if (!node) return
-      setLastActionError(null)
 
       switch (action) {
         case 'insert': {
@@ -394,8 +472,12 @@ function ContentTreeInner({
                 throw new Error(body.error ?? `Duplicate failed: ${res.status}`)
               }
               invalidateTree()
+              toast.push({ variant: 'success', message: 'Duplicate succeeded.' })
             } catch (err) {
-              setLastActionError(err instanceof Error ? err.message : 'Duplicate failed.')
+              toast.push({
+                variant: 'error',
+                message: err instanceof Error ? err.message : 'Duplicate failed.',
+              })
             }
           })()
           break
@@ -431,8 +513,12 @@ function ContentTreeInner({
               if (selected?.id === node.id) {
                 setSelected(null)
               }
+              toast.push({ variant: 'success', message: 'Delete succeeded.' })
             } catch (err) {
-              setLastActionError(err instanceof Error ? err.message : 'Delete failed.')
+              toast.push({
+                variant: 'error',
+                message: err instanceof Error ? err.message : 'Delete failed.',
+              })
             }
           })()
           break
@@ -445,7 +531,7 @@ function ContentTreeInner({
         }
       }
     },
-    [menuState, collectionSlug, invalidateTree, selected],
+    [menuState, collectionSlug, invalidateTree, selected, toast],
   )
 
   // ── editUrl resolution ───────────────────────────────────────────────────
@@ -483,17 +569,6 @@ function ContentTreeInner({
           </span>
         )}
       </div>
-
-      {/* Last-action error banner — replaced by toasts in #22 */}
-      {lastActionError !== null && (
-        <div
-          data-testid="action-error"
-          className="ct-status ct-status--error"
-          style={{ padding: '6px 8px', fontSize: '12px', flexShrink: 0 }}
-        >
-          {lastActionError}
-        </div>
-      )}
 
       <div className="ct-layout">
         <div data-testid="tree-pane" className="ct-pane--tree">
@@ -541,6 +616,7 @@ function ContentTreeInner({
         onAction={handleMenuAction}
         insertOptions={insertOptions}
         contentTypeLabels={contentTypeLabels}
+        canPerformAction={gateFor}
       />
 
       {/* Insert / Rename modal */}

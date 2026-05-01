@@ -15,10 +15,27 @@
  *   activate, Escape to close
  * - role="menu" + role="menuitem" + tabIndex/focus management for a11y
  * - data-testid + data-action attributes for test assertions
+ * - canPerformAction gating (#22): disabled items are rendered greyed-out with
+ *   aria-disabled="true" and clicks are ignored.
  *
- * Out of scope (per issue #19):
- * - canPerformAction gating — that's #22. All items render unconditionally.
- * - Actual action implementations — that's #20.
+ * canPerformAction signature (simplified for the menu's internal use):
+ *   (action: ContextMenuAction, node: TreeNode) => boolean
+ *
+ * This is a curried version of the full PRD signature
+ *   (action, user, node) => boolean
+ * The `user` parameter is resolved by ContentTreeView (which fetches
+ * /api/users/me) and baked into the function before it is passed down.
+ * See ContentTreeView for the adapter that bridges the two signatures.
+ *
+ * Gating behaviour:
+ *   - Each item calls canPerformAction?.(action, node) ?? true.
+ *   - If false: rendered with .ct-context-menu__item--disabled,
+ *     aria-disabled="true", click suppressed.
+ *   - Insert is gated at the parent level: if 'insert' is not allowed, the
+ *     entire submenu trigger is hidden (no-op — hasInserts already handles the
+ *     case where no child types exist; gating just adds user-permission on top).
+ *   - If ALL items end up disabled, a single placeholder "No actions available."
+ *     is shown with data-testid="ctx-menu-empty" so the menu never disappears.
  *
  * @dependencies
  * - react-dom: createPortal
@@ -51,7 +68,18 @@ interface Props {
   onAction: (action: ContextMenuAction, payload?: { contentType?: string }) => void
   insertOptions: Record<string, string[]>
   contentTypeLabels?: Record<string, string>
-  // canPerformAction is OUT OF SCOPE for this issue — #22 wires gating.
+  /**
+   * Authorization callback (simplified signature — user is pre-curried by
+   * ContentTreeView before this prop is passed down).
+   *
+   * When canPerformAction is not provided, all actions are allowed (default).
+   * ContentTreeView adapts the full PRD signature
+   *   (action, user, node) => boolean
+   * into this simplified form:
+   *   (action, node) => boolean
+   * by closing over the resolved current user.
+   */
+  canPerformAction?: (action: ContextMenuAction, node: TreeNode) => boolean
 }
 
 // ─── Clamp helper ─────────────────────────────────────────────────────────────
@@ -82,6 +110,7 @@ export function TreeContextMenu({
   onAction,
   insertOptions,
   contentTypeLabels,
+  canPerformAction,
 }: Props) {
   const menuRef = useRef<HTMLDivElement>(null)
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(false)
@@ -94,17 +123,53 @@ export function TreeContextMenu({
   const allowedInserts = open
     ? getAllowedInserts(open.node.contentType, insertOptions, contentTypeLabels)
     : []
-  const hasInserts = allowedInserts.length > 0
+
+  // Whether the insert option is structurally available (child types exist)
+  // AND the user has permission to insert.
+  const hasInserts =
+    allowedInserts.length > 0 && (open ? (canPerformAction?.('insert', open.node) ?? true) : false)
 
   // Build the ordered list of top-level menu items.
-  // Insert only appears when there are allowed child types.
-  type MenuItem = { action: ContextMenuAction; label: string; isDestructive?: boolean }
+  // Insert only appears when there are allowed child types AND permission.
+  type MenuItem = {
+    action: ContextMenuAction
+    label: string
+    isDestructive?: boolean
+    isDisabled: boolean
+  }
+
   const menuItems: MenuItem[] = [
-    ...(hasInserts ? [{ action: 'insert' as ContextMenuAction, label: 'Insert' }] : []),
-    { action: 'duplicate', label: 'Duplicate' },
-    { action: 'rename', label: 'Rename' },
-    { action: 'delete', label: 'Delete', isDestructive: true },
+    // Insert: only shown when structurally allowed (hasInserts covers permission too)
+    ...(allowedInserts.length > 0
+      ? [
+          {
+            action: 'insert' as ContextMenuAction,
+            label: 'Insert',
+            // Gate: insert is not allowed if hasInserts resolved to false
+            isDisabled: !hasInserts,
+          },
+        ]
+      : []),
+    {
+      action: 'duplicate' as ContextMenuAction,
+      label: 'Duplicate',
+      isDisabled: open ? !(canPerformAction?.('duplicate', open.node) ?? true) : false,
+    },
+    {
+      action: 'rename' as ContextMenuAction,
+      label: 'Rename',
+      isDisabled: open ? !(canPerformAction?.('rename', open.node) ?? true) : false,
+    },
+    {
+      action: 'delete' as ContextMenuAction,
+      label: 'Delete',
+      isDestructive: true,
+      isDisabled: open ? !(canPerformAction?.('delete', open.node) ?? true) : false,
+    },
   ]
+
+  // Whether all items are disabled — used to show the empty placeholder.
+  const allDisabled = menuItems.length > 0 && menuItems.every((item) => item.isDisabled)
 
   // ── Position calculation ──────────────────────────────────────────────────
 
@@ -119,7 +184,7 @@ export function TreeContextMenu({
       ? position.left - SUBMENU_WIDTH
       : position.left + MENU_WIDTH
 
-  // ── Close on outside click, Escape, scroll, resize ───────────────────────
+  // ── Action dispatch (respects disabled state) ─────────────────────────────
 
   const handleItemAction = useCallback(
     (action: ContextMenuAction, extra?: { contentType?: string }) => {
@@ -128,6 +193,8 @@ export function TreeContextMenu({
     },
     [onAction, onClose],
   )
+
+  // ── Close on outside click, Escape, scroll, resize ───────────────────────
 
   useEffect(() => {
     if (!open) return
@@ -171,16 +238,31 @@ export function TreeContextMenu({
           e.preventDefault()
         }
       } else {
-        // Navigate main menu
+        // Navigate main menu — skip disabled items on Up/Down
+        const enabledIndices = menuItems
+          .map((item, i) => ({ item, i }))
+          .filter(({ item }) => !item.isDisabled)
+          .map(({ i }) => i)
+
         if (e.key === 'ArrowDown') {
-          setFocusedIndex((i) => (i + 1) % menuItems.length)
+          if (enabledIndices.length > 0) {
+            const currentPos = enabledIndices.indexOf(focusedIndex)
+            const nextPos = (currentPos + 1) % enabledIndices.length
+            const nextIndex = enabledIndices[nextPos]
+            if (nextIndex !== undefined) setFocusedIndex(nextIndex)
+          }
           e.preventDefault()
         } else if (e.key === 'ArrowUp') {
-          setFocusedIndex((i) => (i - 1 + menuItems.length) % menuItems.length)
+          if (enabledIndices.length > 0) {
+            const currentPos = enabledIndices.indexOf(focusedIndex)
+            const prevPos = (currentPos - 1 + enabledIndices.length) % enabledIndices.length
+            const prevIndex = enabledIndices[prevPos]
+            if (prevIndex !== undefined) setFocusedIndex(prevIndex)
+          }
           e.preventDefault()
         } else if (e.key === 'Enter') {
           const item = menuItems[focusedIndex]
-          if (item) {
+          if (item && !item.isDisabled) {
             if (item.action === 'insert') {
               setIsSubmenuOpen(true)
               setFocusedSubmenuIndex(0)
@@ -191,7 +273,7 @@ export function TreeContextMenu({
           e.preventDefault()
         } else if (e.key === 'ArrowRight') {
           const item = menuItems[focusedIndex]
-          if (item?.action === 'insert') {
+          if (item?.action === 'insert' && !item.isDisabled) {
             setIsSubmenuOpen(true)
             setFocusedSubmenuIndex(0)
           }
@@ -247,53 +329,79 @@ export function TreeContextMenu({
       aria-label="Node actions"
       style={{ left: position.left, top: position.top, width: MENU_WIDTH }}
     >
-      {menuItems.map((item, index) => {
-        const isInsert = item.action === 'insert'
-        const isFocused = focusedIndex === index
+      {/* Empty state — shown when all items are disabled */}
+      {allDisabled && (
+        <div
+          data-testid="ctx-menu-empty"
+          className="ct-context-menu__empty"
+          role="presentation"
+          aria-label="No actions available"
+        >
+          No actions available.
+        </div>
+      )}
 
-        return (
-          <div
-            key={item.action}
-            className={[
-              'ct-context-menu__item',
-              item.isDestructive ? 'ct-context-menu__item--destructive' : '',
-              isFocused ? 'ct-context-menu__item--focused' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            data-testid="ctx-menu-item"
-            data-action={item.action}
-            role="menuitem"
-            tabIndex={-1}
-            aria-haspopup={isInsert ? 'menu' : undefined}
-            aria-expanded={isInsert ? isSubmenuOpen : undefined}
-            onMouseEnter={() => {
-              setFocusedIndex(index)
-              if (isInsert) {
-                setIsSubmenuOpen(true)
-                setFocusedSubmenuIndex(0)
-              } else {
-                setIsSubmenuOpen(false)
-              }
-            }}
-            onClick={(e) => {
-              e.stopPropagation()
-              if (isInsert) {
-                setIsSubmenuOpen((prev) => !prev)
-              } else {
-                handleItemAction(item.action)
-              }
-            }}
-          >
-            <span className="ct-context-menu__item-label">{item.label}</span>
-            {isInsert && (
-              <span className="ct-context-menu__item-arrow" aria-hidden="true">
-                ▸
-              </span>
-            )}
-          </div>
-        )
-      })}
+      {!allDisabled &&
+        menuItems.map((item, index) => {
+          const isInsert = item.action === 'insert'
+          const isFocused = focusedIndex === index
+          const isDisabled = item.isDisabled
+
+          return (
+            <div
+              key={item.action}
+              className={[
+                'ct-context-menu__item',
+                item.isDestructive && !isDisabled ? 'ct-context-menu__item--destructive' : '',
+                isFocused ? 'ct-context-menu__item--focused' : '',
+                isDisabled ? 'ct-context-menu__item--disabled' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              data-testid="ctx-menu-item"
+              data-action={item.action}
+              role="menuitem"
+              tabIndex={-1}
+              aria-disabled={isDisabled ? 'true' : undefined}
+              aria-haspopup={isInsert && !isDisabled ? 'menu' : undefined}
+              aria-expanded={isInsert && !isDisabled ? isSubmenuOpen : undefined}
+              onMouseEnter={() => {
+                setFocusedIndex(index)
+                if (isInsert && !isDisabled) {
+                  setIsSubmenuOpen(true)
+                  setFocusedSubmenuIndex(0)
+                } else {
+                  setIsSubmenuOpen(false)
+                }
+              }}
+              onClick={(e) => {
+                e.stopPropagation()
+                // Disabled items do nothing
+                if (isDisabled) return
+                if (isInsert) {
+                  setIsSubmenuOpen((prev) => !prev)
+                } else {
+                  handleItemAction(item.action)
+                }
+              }}
+            >
+              <span className="ct-context-menu__item-label">{item.label}</span>
+              {isInsert && (
+                <span
+                  className={[
+                    'ct-context-menu__item-arrow',
+                    isDisabled ? 'ct-context-menu__item-arrow--disabled' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  aria-hidden="true"
+                >
+                  ▸
+                </span>
+              )}
+            </div>
+          )
+        })}
 
       {/* Insert submenu — portalled as a sibling of the main menu */}
       {isSubmenuOpen && hasInserts && (

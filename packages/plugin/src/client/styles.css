@@ -301,6 +301,123 @@
   flex-shrink: 0;
 }
 
+/* ── Disabled context menu items (#22) ──────────────────────────────────────── */
+
+/*
+ * Applied when canPerformAction returns false for a given action.
+ * The item renders but is visually greyed out and non-interactive.
+ */
+.ct-context-menu__item--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none; /* belt-and-suspenders alongside the click guard in JS */
+}
+
+/* Disabled items must NOT show the hover/focused background */
+.ct-context-menu__item--disabled:hover,
+.ct-context-menu__item--disabled.ct-context-menu__item--focused {
+  background-color: transparent;
+}
+
+/* Arrow on a disabled Insert trigger is also greyed (inherits from parent opacity) */
+.ct-context-menu__item-arrow--disabled {
+  color: var(--ct-text-muted, #6b7280);
+}
+
+/* Empty state shown when ALL items are disabled */
+.ct-context-menu__empty {
+  padding: 7px 12px;
+  font-size: 12px;
+  color: var(--ct-text-muted, #6b7280);
+  font-style: italic;
+  cursor: default;
+}
+
+/* ── Toast system (#22) ──────────────────────────────────────────────────────── */
+
+/*
+ * Fixed-position container anchored to the bottom-right corner.
+ * z-index: 9997 — intentionally below modals (9999) and context menu (9999)
+ * so toasts don't obscure active interactions.
+ */
+.ct-toast-container {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 9997;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* Pointer-events: none on the container so clicks pass through the gaps */
+  pointer-events: none;
+}
+
+/* Individual toast card */
+.ct-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 380px;
+  min-width: 220px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  font-size: 13px;
+  line-height: 1.4;
+  /* Re-enable pointer-events for each card (container has none) */
+  pointer-events: auto;
+  /* Fade-in + slide-up animation (keyframes injected by Toast.tsx) */
+  animation: ct-toast-in 0.2s ease-out both;
+}
+
+.ct-toast__message {
+  flex: 1;
+  word-break: break-word;
+}
+
+.ct-toast__close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.6;
+  color: inherit;
+  transition: opacity 0.1s ease;
+}
+
+.ct-toast__close:hover {
+  opacity: 1;
+}
+
+/* ── Toast variants ─────────────────────────────────────────────────────────── */
+
+/* Info — blue tint */
+.ct-toast--info {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: var(--ct-text, #1f2937);
+}
+
+/* Success — green tint */
+.ct-toast--success {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: var(--ct-text, #1f2937);
+}
+
+/* Error — red tint */
+.ct-toast--error {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--theme-error-700, #b91c1c);
+}
+
 /* ── Row internals ───────────────────────────────────────────────────────── */
 
 .ct-row__chevron {
