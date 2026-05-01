@@ -14,6 +14,7 @@ export default tseslint.config(
       '**/*.sqlite',
       '**/*.db',
       '**/next-env.d.ts',
+      '.claude/worktrees/**',
       'pnpm-lock.yaml',
     ],
   },
