@@ -5,6 +5,25 @@
   "license": "MIT",
   "description": "Sitecore-style content tree view for Payload CMS 3.x admin.",
   "repository": "github:getfishtank/payload-plugin-content-tree",
+  "homepage": "https://github.com/garsoncron/payload-plugin-content-tree#readme",
+  "bugs": "https://github.com/garsoncron/payload-plugin-content-tree/issues",
+  "author": "Carson Gron <carson@getfishtank.ca>",
+  "keywords": [
+    "payload",
+    "payload-plugin",
+    "payloadcms",
+    "cms",
+    "tree-view",
+    "sitecore",
+    "nested-docs",
+    "hierarchical-content",
+    "admin-ui",
+    "react-arborist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -18,13 +37,19 @@
   "bin": {
     "compat-check": "./dist/compat-check.js"
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "compat-check": "node ./dist/compat-check.js"
+    "compat-check": "node ./dist/compat-check.js",
+    "prepare": "pnpm build",
+    "prepublishOnly": "pnpm test && pnpm build"
   },
   "peerDependencies": {
     "payload": "^3.0.0",
