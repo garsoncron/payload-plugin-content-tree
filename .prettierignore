@@ -1,0 +1,10 @@
+**/dist/**
+**/node_modules/**
+**/.next/**
+**/playwright-report/**
+**/test-results/**
+**/*.sqlite
+**/*.db
+**/next-env.d.ts
+pnpm-lock.yaml
+CHANGELOG.md
