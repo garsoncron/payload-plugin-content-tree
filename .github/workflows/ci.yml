@@ -93,11 +93,16 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
+        # `--with-deps` triggers an interactive apt-get on newer runner images
+        # which hangs the job. ubuntu-latest already has the required system
+        # libs preinstalled, so we skip --with-deps.
+        run: pnpm exec playwright install chromium
+        timeout-minutes: 5
       - name: Build plugin
         run: pnpm build
       - name: Run e2e suite
         run: pnpm test:e2e
+        timeout-minutes: 8
         env:
           CI: 'true'
       - name: Upload Playwright report on failure
