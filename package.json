@@ -13,6 +13,7 @@
     "format:check": "prettier --check .",
     "typecheck": "pnpm -r typecheck",
     "compat-check": "pnpm --filter @garsoncron/payload-plugin-content-tree compat-check",
+    "preflight": "./scripts/preflight-publish.sh",
     "prepare": "husky"
   },
   "lint-staged": {
