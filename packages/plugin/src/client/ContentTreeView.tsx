@@ -68,7 +68,13 @@ import { TreeContextMenu } from './TreeContextMenu'
 import { Modal } from './ui/Modal'
 import { ToastProvider, useToast } from './ui/Toast'
 import { useExpandState } from './hooks/useExpandState'
-import './styles.css'
+
+// Stylesheet is exported separately at `<package>/styles.css` and must be
+// imported once by the consumer (typically in their app's root layout).
+// We deliberately do NOT `import './styles.css'` here: Next.js does not
+// process CSS imports inside node_modules unless `transpilePackages` is set,
+// so a side-effect import works in workspace dev but silently fails for real
+// `npm install` consumers — caught by scripts/preflight-publish.sh.
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

@@ -26,6 +26,14 @@ This plugin adds a drop-in `/admin/tree` view built on [react-arborist](https://
 pnpm add @garsoncron/payload-plugin-content-tree
 ```
 
+Then import the stylesheet once in your Payload admin layout (typically `app/(payload)/layout.tsx`):
+
+```ts
+import '@garsoncron/payload-plugin-content-tree/styles.css'
+```
+
+> Why a separate import? Next.js doesn't process CSS imports inside `node_modules` packages by default — a side-effect import inside the bundle silently no-ops for real consumers. Importing the stylesheet from your own app's layout file is the canonical pattern (see `react-arborist`, `@measured/puck`, etc.).
+
 ## Usage
 
 Register the plugin in `payload.config.ts` and point it at a collection that defines the required fields:

@@ -29,7 +29,10 @@
 
   /* ── Color — text ───────────────────────────────────── */
   --ct-text: var(--theme-elevation-800, #1f2937);
-  --ct-text-muted: var(--theme-elevation-500, #6b7280);
+  /* `--theme-elevation-500` is #808080 in Payload's light theme (3.94:1 on
+     white — below WCAG AA 4.5:1). Chain to elevation-700 for a passing
+     contrast ratio; literal fallback is hand-tuned to >4.5:1 on white. */
+  --ct-text-muted: var(--theme-elevation-700, #525866);
 
   /* ── Color — surface ────────────────────────────────── */
   --ct-surface: var(--theme-elevation-0, #fff);

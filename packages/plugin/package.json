@@ -32,7 +32,8 @@
     "./client": {
       "types": "./dist/client.d.ts",
       "default": "./dist/client.js"
-    }
+    },
+    "./styles.css": "./dist/client.css"
   },
   "bin": {
     "compat-check": "./dist/compat-check.js"

@@ -5,6 +5,7 @@ import { handleServerFunctions, RootLayout } from '@payloadcms/next/layouts'
 import React from 'react'
 
 import './custom.scss'
+import '@garsoncron/payload-plugin-content-tree/styles.css'
 import { importMap } from './admin/importMap.js'
 
 const serverFunction: ServerFunctionClient = async function (args) {
