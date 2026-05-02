@@ -143,9 +143,7 @@ Variables that fall back to Payload's `--theme-elevation-*` ramp pick up your Pa
 
 ## Status
 
-> **Status: Active, maintained.** v1.x line is stable; SemVer-strict. Solo-maintained by [Carson Gron](https://github.com/garsoncron) at [Fishtank Consulting](https://getfishtank.ca). Issue triage within 7 business days; security issues within 48 hours via SECURITY.md. Major-version compatibility maintained for the latest Payload 3.x; older Payload versions supported on a best-effort basis.
->
-> **Commercial support:** for SLAs, custom features, or migration assistance, contact carson@getfishtank.ca.
+> **Status: Active, maintained.** v1.x line is stable; SemVer-strict. Issue triage within 7 business days; security issues within 48 hours via [SECURITY.md](./SECURITY.md). Major-version compatibility maintained for the latest Payload 3.x; older Payload versions supported on a best-effort basis.
 
 ## Roadmap
 
